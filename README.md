@@ -1,5 +1,7 @@
 # Screen Latency Testing
 
+**This is not an officially supported Google product**
+
 This is an android app that uses OCR to detect text appearing in the field of
 view of the camera (typically pointed at a screen or laptop display).
 
