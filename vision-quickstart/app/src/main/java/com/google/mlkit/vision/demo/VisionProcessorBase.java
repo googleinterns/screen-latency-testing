@@ -20,9 +20,11 @@ import android.app.ActivityManager;
 import android.app.ActivityManager.MemoryInfo;
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.media.Image;
 import android.os.Build.VERSION_CODES;
 import android.os.SystemClock;
 import android.util.Log;
+import android.util.Pair;
 import android.widget.Toast;
 
 import androidx.annotation.GuardedBy;
@@ -38,6 +40,7 @@ import com.google.mlkit.vision.common.InputImage;
 import com.google.mlkit.vision.demo.preference.PreferenceUtils;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -80,6 +83,8 @@ public abstract class VisionProcessorBase<T> implements VisionImageProcessor {
     private ByteBuffer processingImage;
     @GuardedBy("this")
     private FrameMetadata processingMetaData;
+    private ArrayList<Pair<Image, Long>> bufferImage = new ArrayList<Pair<Image, Long>>();
+    private Integer depth = 120;
 
     protected VisionProcessorBase(Context context) {
         activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
@@ -164,15 +169,22 @@ public abstract class VisionProcessorBase<T> implements VisionImageProcessor {
             bitmap = BitmapUtils.getBitmap(image);
         }
 
-        requestDetectInImage(
-                InputImage.fromMediaImage(image.getImage(), image.getImageInfo().getRotationDegrees()),
-                graphicOverlay,
-                /* originalCameraImage= */ bitmap,
-                /* shouldShowFps= */ true)
-                // When the image is from CameraX analysis use case, must call image.close() on received
-                // images when finished using them. Otherwise, new images may not be received or the camera
-                // may stall.
-                .addOnCompleteListener(results -> image.close());
+        if(bufferImage.size()>depth)
+            bufferImage.clear();        // O(n) operation
+
+        bufferImage.add(new Pair(image.getImage(), System.currentTimeMillis()));
+
+        Log.d("Rokus logs", "Current buffer size:" + bufferImage.size());
+        image.close();                                  // Camera Image preview suppressed
+//        requestDetectInImage(
+//                InputImage.fromMediaImage(image.getImage(), image.getImageInfo().getRotationDegrees()),
+//                graphicOverlay,
+//                /* originalCameraImage= */ bitmap,
+//                /* shouldShowFps= */ true)
+//                // When the image is from CameraX analysis use case, must call image.close() on received
+//                // images when finished using them. Otherwise, new images may not be received or the camera
+//                // may stall.
+//                .addOnCompleteListener(results -> image.close());
     }
 
     // -----------------Common processing logic-------------------------------------------------------
