@@ -32,6 +32,7 @@ import com.google.mlkit.vision.text.Text.Line;
 import com.google.mlkit.vision.text.TextRecognition;
 import com.google.mlkit.vision.text.TextRecognizer;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -40,7 +41,8 @@ import java.util.List;
 public class TextRecognitionProcessor extends VisionProcessorBase<Text> {
 
     private static final String TAG = "TextRecProcessor";
-
+    private ArrayList<String> recogonizedTextList = new ArrayList<String>();
+    private Integer depth = 30;
     private final TextRecognizer textRecognizer;
 
     public TextRecognitionProcessor(Context context) {
@@ -62,6 +64,19 @@ public class TextRecognitionProcessor extends VisionProcessorBase<Text> {
     @Override
     protected void onSuccess(@NonNull Text text, @NonNull GraphicOverlay graphicOverlay) {
         Log.d(TAG, "On-device Text detection successful");
+        recogonizedTextList.add(text.getTextBlocks().get(0).getLines().get(0).getText());
+        if(recogonizedTextList.size()==depth)
+        {
+            Log.d("Noise testing", "Frame id: " + 0 + "  Frame text:" + recogonizedTextList.get(0));
+            Integer differentFrames = 0;
+            for(int i=1;i<depth;i++) {
+                Log.d("Noise testing", "Frame id: " + i + "  Frame text:" + recogonizedTextList.get(i));
+                if(recogonizedTextList.get(i).equals(recogonizedTextList.get(i-1)) == false)
+                    differentFrames++;
+            }
+            Log.d("Noise testing Result", "One batch processed. Consecutive frames which were different to their previous:"+ differentFrames);
+            recogonizedTextList.clear();
+        }
         logExtrasForTesting(text);
         graphicOverlay.add(new TextGraphic(graphicOverlay, text));
     }
