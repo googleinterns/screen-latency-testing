@@ -36,6 +36,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.camera.core.ExperimentalGetImage;
+import androidx.camera.core.ImageInfo;
 import androidx.camera.core.ImageProxy;
 
 import com.google.android.gms.tasks.Task;
@@ -88,8 +89,19 @@ public abstract class VisionProcessorBase<T> implements VisionImageProcessor {
     private ByteBuffer processingImage;
     @GuardedBy("this")
     private FrameMetadata processingMetaData;
-    private ArrayList<Pair<Bitmap, Long>> bufferImageList = new ArrayList<>();
-    private Integer depth = 30;
+
+    class bufferImage
+    {
+        Bitmap image;
+        ImageInfo info;
+        bufferImage(Bitmap image, ImageInfo info)
+        {
+            this.image = image;
+            this.info = info;
+        }
+    };
+    private ArrayList<bufferImage> bufferImageList = new ArrayList<>();
+    private Integer depth = 60;
 
     protected VisionProcessorBase(Context context) {
         activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
@@ -158,30 +170,7 @@ public abstract class VisionProcessorBase<T> implements VisionImageProcessor {
                 /* shouldShowFps= */ true)
                 .addOnSuccessListener(executor, results -> processLatestImage(graphicOverlay));
     }
-    @RequiresApi(api = VERSION_CODES.KITKAT)
-    private Bitmap toBitmap(Image image) {
-        Image.Plane[] planes = image.getPlanes();
-        ByteBuffer yBuffer = planes[0].getBuffer();
-        ByteBuffer uBuffer = planes[1].getBuffer();
-        ByteBuffer vBuffer = planes[2].getBuffer();
 
-        int ySize = yBuffer.remaining();
-        int uSize = uBuffer.remaining();
-        int vSize = vBuffer.remaining();
-
-        byte[] nv21 = new byte[ySize + uSize + vSize];
-        //U and V are swapped
-        yBuffer.get(nv21, 0, ySize);
-        vBuffer.get(nv21, ySize, vSize);
-        uBuffer.get(nv21, ySize + vSize, uSize);
-
-        YuvImage yuvImage = new YuvImage(nv21, ImageFormat.NV21, image.getWidth(), image.getHeight(), null);
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        yuvImage.compressToJpeg(new Rect(0, 0, yuvImage.getWidth(), yuvImage.getHeight()), 75, out);
-
-        byte[] imageBytes = out.toByteArray();
-        return BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
-    }
     // -----------------Code for processing live preview frame from CameraX API-----------------------
     @Override
     @RequiresApi(VERSION_CODES.KITKAT)
@@ -193,13 +182,12 @@ public abstract class VisionProcessorBase<T> implements VisionImageProcessor {
         }
         if(bufferImageList.size()>depth)
             bufferImageList.clear();        // O(n) operation
-
-        bufferImageList.add(new Pair(toBitmap(image.getImage()), System.currentTimeMillis()));
+        bufferImageList.add(new bufferImage(BitmapUtils.getBitmap(image), image.getImageInfo()));
 
         Bitmap bitmap = null;
         if (!PreferenceUtils.isCameraLiveViewportEnabled(graphicOverlay.getContext())) {
             //bitmap = BitmapUtils.getBitmap(image);
-            bitmap = bufferImageList.get(0).first;
+            bitmap = bufferImageList.get(0).image;
         }
 
         Log.d("Rokus logs", "Current buffer size:" + bufferImageList.size());
