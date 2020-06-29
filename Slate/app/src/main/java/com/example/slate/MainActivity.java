@@ -47,6 +47,19 @@ public class MainActivity extends AppCompatActivity {
     private CameraSelector cameraSelector;
     private Camera camera;
 
+    private class bufferImage
+    {
+        Bitmap image;
+        ImageInfo info;
+        bufferImage(Bitmap image, ImageInfo info)
+        {
+            this.image = image;
+            this.info = info;
+        }
+    };
+    private ArrayList<bufferImage> bufferImageList = new ArrayList<>();
+    private Integer depth = 60;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -105,8 +118,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void processImageProxy(ImageProxy imageProxy) {
-            Log.d(TAG, "Analysis working");
-            imageProxy.close();
+        if(bufferImageList.size()>depth)
+            bufferImageList.clear();
+
+        Log.d(TAG, "Current Buffer Size:" + bufferImageList.size());
+        bufferImageList.add(new bufferImage(BitmapUtils.getBitmap(imageProxy), imageProxy.getImageInfo()));
+        imageProxy.close();
     }
 
     @Override
