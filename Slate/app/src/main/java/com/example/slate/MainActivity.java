@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.camera.core.Camera;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageAnalysis;
+import androidx.camera.core.ImageInfo;
 import androidx.camera.core.ImageProxy;
 import androidx.camera.core.Preview;
 import androidx.camera.core.impl.PreviewConfig;
@@ -17,6 +18,7 @@ import androidx.lifecycle.LifecycleOwner;
 
 import android.annotation.SuppressLint;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.util.Log;
 import android.util.Rational;
@@ -27,6 +29,7 @@ import android.widget.Toast;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.mlkit.common.MlKitException;
 
+import java.util.ArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -63,7 +66,6 @@ public class MainActivity extends AppCompatActivity {
             try {
                 cameraProvider = cameraProviderFuture.get();
                 bindUseCase();
-                //bindAnalysis();
             } catch (ExecutionException | InterruptedException e) {
                 // No errors need to be handled for this Future.
                 // This should never be reached.
