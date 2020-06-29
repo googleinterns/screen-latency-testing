@@ -4,6 +4,8 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.camera.core.Camera;
 import androidx.camera.core.CameraSelector;
+import androidx.camera.core.ImageAnalysis;
+import androidx.camera.core.ImageProxy;
 import androidx.camera.core.Preview;
 import androidx.camera.core.impl.PreviewConfig;
 import androidx.camera.lifecycle.ProcessCameraProvider;
@@ -23,18 +25,24 @@ import android.util.Size;
 import android.widget.Toast;
 
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.mlkit.common.MlKitException;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class MainActivity extends AppCompatActivity {
+    private static final String TAG = "MainActivity";
     private int REQUEST_CODE_PERMISSIONS = 10;
     private final String[] REQUIRED_PERMISSIONS = new String[]{"android.permission.CAMERA","android.permission.WRITE_EXTERNAL_STORAGE"};
     private PreviewView viewFinder;
     private Preview preview;
+    private ImageAnalysis analysis;
     private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
     private ExecutorService cameraExecutor;
+    private ProcessCameraProvider cameraProvider;
+    private CameraSelector cameraSelector;
+    private Camera camera;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,8 +61,9 @@ public class MainActivity extends AppCompatActivity {
         cameraProviderFuture = ProcessCameraProvider.getInstance(this);
         cameraProviderFuture.addListener(() -> {
             try {
-                ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
-                bindPreview(cameraProvider);
+                cameraProvider = cameraProviderFuture.get();
+                bindUseCase();
+                //bindAnalysis();
             } catch (ExecutionException | InterruptedException e) {
                 // No errors need to be handled for this Future.
                 // This should never be reached.
@@ -63,21 +72,39 @@ public class MainActivity extends AppCompatActivity {
 
     }
     @SuppressLint("RestrictedApi")
-    private void bindPreview(ProcessCameraProvider cameraProvider) {
-        Preview preview = new Preview.Builder()
-                .build();
+    private void bindUseCase() {
+        if(cameraProvider == null){
+            return;
+        }
+        if(analysis != null){
+            cameraProvider.unbind(analysis);
+        }
 
-        CameraSelector cameraSelector = new CameraSelector.Builder()
+        preview = new Preview.Builder().build();
+        analysis = new ImageAnalysis.Builder().build();
+
+        cameraSelector = new CameraSelector.Builder()
                 .requireLensFacing(CameraSelector.LENS_FACING_BACK)
                 .build();
 
         try{
             CameraX.unbindAll();
-            Camera camera = cameraProvider.bindToLifecycle((LifecycleOwner)this, cameraSelector, preview);
+            analysis.setAnalyzer(
+                    ContextCompat.getMainExecutor(this),
+                    imageProxy -> {
+                        processImageProxy(imageProxy);
+                    }
+            );
+            camera = cameraProvider.bindToLifecycle((LifecycleOwner)this, cameraSelector, preview, analysis);
             preview.setSurfaceProvider(viewFinder.createSurfaceProvider(camera.getCameraInfo()));
         }catch (Exception e){
             Log.d("","Use case binding failed");
         }
+    }
+
+    private void processImageProxy(ImageProxy imageProxy) {
+            Log.d(TAG, "Analysis working");
+            imageProxy.close();
     }
 
     @Override
