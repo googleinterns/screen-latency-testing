@@ -21,6 +21,7 @@
     <!-- Permission declarations -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
 
     <!-- A camera with burst capability is required to use this application -->
     <uses-feature android:name="android.hardware.camera.any" />
@@ -43,6 +44,10 @@
             </intent-filter>
 
         </activity>
+        <activity
+            android:name="com.example.android.camera2.slowmo.MainActivity"
+            android:theme="@style/AppTheme">
+        </activity>
 
         <!-- FileProvider used to share media with other apps -->
         <provider
@@ -54,6 +59,11 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"/>
         </provider>
+
+        <meta-data
+            android:name="com.google.mlkit.vision.DEPENDENCIES"
+            android:value="ocr" />
+        <!-- To use multiple models: android:value="ocr,model2,model3" -->
 
     </application>
 

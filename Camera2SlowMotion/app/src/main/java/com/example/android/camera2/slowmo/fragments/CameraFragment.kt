@@ -52,9 +52,7 @@ import com.example.android.camera.utils.OrientationLiveData
 import com.example.android.camera.utils.SIZE_1080P
 import com.example.android.camera.utils.SmartSize
 import com.example.android.camera.utils.getDisplaySmartSize
-import com.example.android.camera2.slowmo.BuildConfig
-import com.example.android.camera2.slowmo.CameraActivity
-import com.example.android.camera2.slowmo.R
+import com.example.android.camera2.slowmo.*
 import kotlinx.android.synthetic.main.fragment_camera.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -359,16 +357,21 @@ class CameraFragment : Fragment() {
                     MediaScannerConnection.scanFile(
                             view.context, arrayOf(outputFile.absolutePath), null, null)
 
-                    // Launch external activity via intent to play video recorded using our provider
-                    startActivity(Intent().apply {
-                        action = Intent.ACTION_VIEW
-                        type = MimeTypeMap.getSingleton()
-                                .getMimeTypeFromExtension(outputFile.extension)
-                        val authority = "${BuildConfig.APPLICATION_ID}.provider"
-                        data = FileProvider.getUriForFile(view.context, authority, outputFile)
-                        flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or
-                                Intent.FLAG_ACTIVITY_CLEAR_TOP
-                    })
+                    // Launch analyser activity via intent
+                    val intent = Intent(view.context, MainActivity::class.java)
+                    val authority = "${BuildConfig.APPLICATION_ID}.provider"
+                    intent.putExtra("file URI", FileProvider.getUriForFile(view.context, authority, outputFile).toString())
+                    Log.d("Rokus Logs:", "starting intent call in kotlin")
+                    try {
+                        // some code
+                        startActivity(intent)
+                    }
+                    catch (exc: Throwable) {
+                        // handler
+                        Log.d("Rokus Logs:", exc.message)
+                        Log.d("Rokus Logs:", exc.cause.toString())
+                        Log.d("Rokus Logs:", exc.stackTrace.toString())
+                    }
 
                     // Finishes our current camera screen
                     delay(CameraActivity.ANIMATION_SLOW_MILLIS)

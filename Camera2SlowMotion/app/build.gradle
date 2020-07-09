@@ -89,4 +89,8 @@ dependencies {
     androidTestImplementation 'androidx.test:rules:1.2.0'
     androidTestImplementation 'androidx.test:runner:1.2.0'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
+
+    // For analyser
+    implementation 'com.google.android.gms:play-services-mlkit-text-recognition:16.0.0'
+    implementation "android.arch.navigation:navigation-fragment-ktx:1.0.0-alpha11"
 }

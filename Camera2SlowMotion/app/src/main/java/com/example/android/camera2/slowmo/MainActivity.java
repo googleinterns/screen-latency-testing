@@ -1,4 +1,4 @@
-package com.example.videoanalyser;
+package com.example.android.camera2.slowmo;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -38,7 +38,7 @@ import static android.media.MediaMetadataRetriever.METADATA_KEY_VIDEO_FRAME_COUN
 public class MainActivity extends AppCompatActivity {
     private Integer totalFrames=0;
     private Integer safeFrames=10;
-    private final Integer filePickerRequestCode = 10;
+    private final Integer FILE_PICKER_REQUEST_CODE = 10;
 
     private TextView filePath;
     private Button filePickerBtn;
@@ -61,15 +61,21 @@ public class MainActivity extends AppCompatActivity {
 
         recognizer = TextRecognition.getClient();
         mediaMetadataRetriever = new MediaMetadataRetriever();
+        Bundle extras = getIntent().getExtras();
+
+        try {
+            filePath.setText(extras.getString("file URI"));
+        }catch (Exception e){
+            Log.d("Rokus logs:", "Integration failed, no file URI received from capture session");
+        }
 
         filePickerBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 fileIntent = new Intent(Intent.ACTION_GET_CONTENT);
                 fileIntent.setType("*/*");
-                startActivityForResult(fileIntent, filePickerRequestCode);
+                startActivityForResult(fileIntent, FILE_PICKER_REQUEST_CODE);
             }
-
         });
 
         analyzeBtn.setOnClickListener(new View.OnClickListener() {
@@ -89,7 +95,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == filePickerRequestCode && resultCode == RESULT_OK) {
+        if (requestCode == FILE_PICKER_REQUEST_CODE && resultCode == RESULT_OK) {
             String path = data.getData().toString();
             fileUri = data.getData();
             filePath.setText(path);
@@ -98,6 +104,7 @@ public class MainActivity extends AppCompatActivity {
 
     @RequiresApi(api = Build.VERSION_CODES.P)
     private void analyze(){
+        fileUri = Uri.parse(filePath.getText().toString());
         mediaMetadataRetriever.setDataSource(getApplicationContext(), fileUri);
         totalFrames = Integer.valueOf(mediaMetadataRetriever.extractMetadata(METADATA_KEY_VIDEO_FRAME_COUNT));
         List<Bitmap> frameList = mediaMetadataRetriever.getFramesAtIndex(0, Math.max(0, totalFrames-safeFrames));
@@ -121,12 +128,10 @@ public class MainActivity extends AppCompatActivity {
                                         @Override
                                         public void onFailure(@NonNull Exception e) {
                                             // Task failed with an exception
-                                            e.printStackTrace();
-                                            e.getCause();
+
+                                            Log.d("Rokus Logs:", "Analyse failed with: " + e.getMessage());
                                         }
                                     });
-
-
         }
     }
 }
