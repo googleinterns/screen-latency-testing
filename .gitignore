@@ -1,4 +1,14 @@
 .idea/
-Camera2SlowMotion/
-Slate/
 local.properties
+videoanalyser/.idea/
+Slate/
+vision-quickstart/
+Camera2SlowMotion/.idea
+Camera2SlowMotion/app/build/generated/
+Camera2SlowMotion/utils/build/generated/
+Camera2SlowMotion/app/build/
+Camera2SlowMotion/build/intermediates/
+Camera2SlowMotion/.gradle/
+Camera2SlowMotion/local.properties
+Camera2SlowMotion/utils/build/
+
