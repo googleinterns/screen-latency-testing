@@ -1,5 +1,6 @@
 package com.example.android.camera2.slowmo;
 
+import android.text.method.ScrollingMovementMethod;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
@@ -41,6 +42,7 @@ public class MainActivity extends AppCompatActivity {
     private final Integer FILE_PICKER_REQUEST_CODE = 10;
 
     private TextView filePath;
+    private TextView analyseResultField;
     private Button filePickerBtn;
     private Button analyzeBtn;
     private Intent fileIntent;
@@ -58,7 +60,9 @@ public class MainActivity extends AppCompatActivity {
         filePath = findViewById(R.id.selectedFilePath);
         filePickerBtn = findViewById(R.id.fileSelectButton);
         analyzeBtn = findViewById(R.id.analyze);
+        analyseResultField = findViewById(R.id.analyseResultView);
 
+        analyseResultField.setMovementMethod(new ScrollingMovementMethod());
         recognizer = TextRecognition.getClient();
         mediaMetadataRetriever = new MediaMetadataRetriever();
         Bundle extras = getIntent().getExtras();
@@ -120,6 +124,7 @@ public class MainActivity extends AppCompatActivity {
                                 public void onSuccess(Text visionText) {
                                     // Task completed successfully
                                     results.add(visionText.getText());
+                                    analyseResultField.append("\n\nText detected at index:" + finalI + " " + visionText.getText());
                                     Log.d("Rokus logs", "Text detected at index:" + finalI + " " + visionText.getText());
                                 }
                             })
