@@ -21,12 +21,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.graphics.Color
-import android.hardware.camera2.CameraCaptureSession
-import android.hardware.camera2.CameraCharacteristics
-import android.hardware.camera2.CameraConstrainedHighSpeedCaptureSession
-import android.hardware.camera2.CameraDevice
-import android.hardware.camera2.CameraManager
-import android.hardware.camera2.CaptureRequest
+import android.hardware.camera2.*
 import android.hardware.camera2.params.StreamConfigurationMap
 import android.media.MediaCodec
 import android.media.MediaRecorder
@@ -38,7 +33,6 @@ import android.util.Log
 import android.util.Range
 import android.util.Size
 import android.view.*
-import android.webkit.MimeTypeMap
 import androidx.core.content.FileProvider
 import androidx.core.graphics.drawable.toDrawable
 import androidx.fragment.app.Fragment
@@ -47,12 +41,11 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.navigation.Navigation
 import androidx.navigation.fragment.navArgs
-import com.example.android.camera.utils.AutoFitSurfaceView
-import com.example.android.camera.utils.OrientationLiveData
-import com.example.android.camera.utils.SIZE_1080P
-import com.example.android.camera.utils.SmartSize
-import com.example.android.camera.utils.getDisplaySmartSize
-import com.example.android.camera2.slowmo.*
+import com.example.android.camera.utils.*
+import com.example.android.camera2.slowmo.BuildConfig
+import com.example.android.camera2.slowmo.CameraActivity
+import com.example.android.camera2.slowmo.MainActivity
+import com.example.android.camera2.slowmo.R
 import kotlinx.android.synthetic.main.fragment_camera.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -60,9 +53,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import java.io.File
 import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-import kotlin.RuntimeException
+import java.util.*
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
@@ -219,8 +210,8 @@ class CameraFragment : Fragment() {
 
         // Used to rotate the output media to match device orientation
         relativeOrientation = OrientationLiveData(requireContext(), characteristics).apply {
-            observe(viewLifecycleOwner, Observer {
-                orientation -> Log.d(TAG, "Orientation changed: $orientation")
+            observe(viewLifecycleOwner, Observer { orientation ->
+                Log.d(TAG, "Orientation changed: $orientation")
             })
         }
     }
@@ -244,7 +235,7 @@ class CameraFragment : Fragment() {
      * additional constraint that the selected size must also be available as one of possible
      * constrained high-speed session sizes.
      */
-    private fun <T>getConstrainedPreviewOutputSize(
+    private fun <T> getConstrainedPreviewOutputSize(
             display: Display,
             characteristics: CameraCharacteristics,
             targetClass: Class<T>,
@@ -280,6 +271,7 @@ class CameraFragment : Fragment() {
         // Then, get the largest output size that is smaller or equal than our max size
         return validSizes.first { it.long <= maxSize.long && it.short <= maxSize.short }.size
     }
+
     /**
      * Begin all camera operations in a coroutine in the main thread. This function:
      * - Opens the camera
@@ -363,11 +355,8 @@ class CameraFragment : Fragment() {
                     intent.putExtra("file URI", FileProvider.getUriForFile(view.context, authority, outputFile).toString())
                     Log.d("Rokus Logs:", "starting intent call in kotlin")
                     try {
-                        // some code
                         startActivity(intent)
-                    }
-                    catch (exc: Throwable) {
-                        // handler
+                    } catch (exc: Throwable) {
                         Log.d("Rokus Logs:", exc.message)
                         Log.d("Rokus Logs:", exc.cause.toString())
                         Log.d("Rokus Logs:", exc.stackTrace.toString())
@@ -399,7 +388,7 @@ class CameraFragment : Fragment() {
             }
 
             override fun onError(device: CameraDevice, error: Int) {
-                val msg = when(error) {
+                val msg = when (error) {
                     ERROR_CAMERA_DEVICE -> "Fatal (device)"
                     ERROR_CAMERA_DISABLED -> "Device policy"
                     ERROR_CAMERA_IN_USE -> "Camera in use"
@@ -427,7 +416,7 @@ class CameraFragment : Fragment() {
         // Creates a capture session using the predefined targets, and defines a session state
         // callback which resumes the coroutine once the session is configured
         device.createConstrainedHighSpeedCaptureSession(
-                targets, object: CameraCaptureSession.StateCallback() {
+                targets, object : CameraCaptureSession.StateCallback() {
 
             override fun onConfigured(session: CameraCaptureSession) =
                     cont.resume(session as CameraConstrainedHighSpeedCaptureSession)
