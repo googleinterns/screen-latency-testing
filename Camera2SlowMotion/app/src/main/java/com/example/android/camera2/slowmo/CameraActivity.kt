@@ -21,10 +21,26 @@ import android.util.Log
 import android.view.View
 import android.widget.FrameLayout
 import androidx.appcompat.app.AppCompatActivity
+import java.io.BufferedReader
+import java.io.IOException
+import java.io.InputStreamReader
+import java.io.PrintWriter
+import java.net.Socket
 
 class CameraActivity : AppCompatActivity() {
 
     private lateinit var container: FrameLayout
+    private var SERVER_IP = "127.0.0.1"
+    private val connectionThread = Thread({
+        try {
+            socket = Socket(SERVER_IP, laptopPort)
+            output = PrintWriter(socket.getOutputStream())
+            input = BufferedReader(InputStreamReader(socket.getInputStream()))
+            Log.d("Rokus Logs:", "Connection established")
+        } catch (e: IOException) {
+            e.printStackTrace()
+        }
+    })
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -33,6 +49,9 @@ class CameraActivity : AppCompatActivity() {
         val intent = intent
         val bundle = intent!!.extras
         laptopPort = bundle?.getString("port")?.toInt() ?: 0
+        if (laptopPort != 0) {
+            connectionThread.start()
+        }
     }
 
     override fun onResume() {
@@ -43,6 +62,11 @@ class CameraActivity : AppCompatActivity() {
             container.systemUiVisibility = FLAGS_FULLSCREEN
         }, IMMERSIVE_FLAG_TIMEOUT)
     }
+ // TODO
+//    override fun onDestroy() {
+//        super.onDestroy()
+//        connectionThread.clos
+//    }
 
     companion object {
         /** Combination of all flags required to put activity into immersive mode */
@@ -57,5 +81,8 @@ class CameraActivity : AppCompatActivity() {
         const val ANIMATION_SLOW_MILLIS = 100L
         private const val IMMERSIVE_FLAG_TIMEOUT = 500L
         var laptopPort: Int = 0
+        lateinit var output:PrintWriter
+        lateinit var input:BufferedReader
+        lateinit var socket: Socket
     }
 }
