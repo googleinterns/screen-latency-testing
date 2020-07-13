@@ -17,6 +17,7 @@
 package com.example.android.camera2.slowmo
 
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.FrameLayout
 import androidx.appcompat.app.AppCompatActivity
@@ -29,6 +30,9 @@ class CameraActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_camera)
         container = findViewById(R.id.fragment_container)
+        val intent = intent
+        val bundle = intent!!.extras
+        laptopPort = bundle?.getString("port")?.toInt() ?: 0
     }
 
     override fun onResume() {
@@ -52,5 +56,6 @@ class CameraActivity : AppCompatActivity() {
         const val ANIMATION_FAST_MILLIS = 50L
         const val ANIMATION_SLOW_MILLIS = 100L
         private const val IMMERSIVE_FLAG_TIMEOUT = 500L
+        var laptopPort: Int = 0
     }
 }

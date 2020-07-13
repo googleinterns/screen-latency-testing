@@ -54,6 +54,7 @@ public class MainActivity extends AppCompatActivity {
     analyseResultField = findViewById(R.id.analyseResultView);
 
     analyseResultField.setMovementMethod(new ScrollingMovementMethod());
+    analyseResultField.append("Port binded:" + CameraActivity.Companion.getLaptopPort());
     recognizer = TextRecognition.getClient();
     mediaMetadataRetriever = new MediaMetadataRetriever();
     Bundle extras = getIntent().getExtras();
