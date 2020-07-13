@@ -308,7 +308,8 @@ class CameraFragment : Fragment() {
                     // Prevents screen rotation during the video recording
                     requireActivity().requestedOrientation =
                             ActivityInfo.SCREEN_ORIENTATION_LOCKED
-
+                    CameraActivity.output.write("started capture")
+                    CameraActivity.output.flush()
                     // Stops preview requests, and start record requests
                     session.stopRepeating()
                     session.setRepeatingBurst(recordRequestList, null, cameraHandler)
