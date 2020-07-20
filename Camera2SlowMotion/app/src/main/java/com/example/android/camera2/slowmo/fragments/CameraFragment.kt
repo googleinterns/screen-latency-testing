@@ -329,6 +329,7 @@ class CameraFragment : Fragment() {
                         prepare()
                         start()
                     }
+                    recordingStartTime = java.time.LocalTime.now().toString()
                     recordingStartMillis = System.currentTimeMillis()
                     Log.d(TAG, "Recording started")
 
@@ -362,6 +363,7 @@ class CameraFragment : Fragment() {
                     val intent = Intent(view.context, MainActivity::class.java)
                     val authority = "${BuildConfig.APPLICATION_ID}.provider"
                     intent.putExtra("file URI", FileProvider.getUriForFile(view.context, authority, outputFile).toString())
+                    intent.putExtra("video fps", args.fps.toString())
                     Log.d("Rokus Logs:", "starting intent call in kotlin")
                     try {
                         startActivity(intent)
@@ -456,7 +458,7 @@ class CameraFragment : Fragment() {
 
     companion object {
         private val TAG = CameraFragment::class.java.simpleName
-
+        lateinit var recordingStartTime:String
         private const val RECORDER_VIDEO_BITRATE: Int = 10000000
         private const val MIN_REQUIRED_RECORDING_TIME_MILLIS: Long = 1000L
 

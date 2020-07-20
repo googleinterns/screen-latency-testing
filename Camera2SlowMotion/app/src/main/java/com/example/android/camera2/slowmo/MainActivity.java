@@ -18,6 +18,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
+import com.example.android.camera2.slowmo.fragments.CameraFragment;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
@@ -31,9 +32,11 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
   private Integer totalFrames = 0;
+  private Integer framesProcessed = 0;
   private final Integer SAFE_FRAMES = 10;
   private final Integer FILE_PICKER_REQUEST_CODE = 10;
   private String tag = "Rokus Logs:";
+  private Integer fps;
 
   private TextView filePath;
   private TextView analyseResultField;
@@ -48,6 +51,7 @@ public class MainActivity extends AppCompatActivity {
   private ArrayList<String> serverCache = new ArrayList<String>();
   private ArrayList<Integer> deltaServer = new ArrayList<>();
   private List<Bitmap> frameList = new ArrayList<>();
+  private ArrayList<Integer> deltaOCR = new ArrayList<>();
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -67,6 +71,7 @@ public class MainActivity extends AppCompatActivity {
 
     try {
       filePath.setText(extras.getString("file URI"));
+      fps = Integer.valueOf(extras.getString("video fps"));
     } catch (Exception e) {
       Log.d("Rokus logs:", "Integration failed, no file URI received from capture session");
     }
@@ -159,30 +164,9 @@ public class MainActivity extends AppCompatActivity {
         Log.d(tag, String.valueOf(e.getCause()));
       }
     }
-
-    // Parse timestamps received from server. Last 12 characters of time is important here.
-    private void parseServer() {
-      Integer length = serverCache.get(0).length() - 12;
-      for (int i = 0; i < serverCache.size(); i++) {
-        String tmp = serverCache.get(i).substring(length);
-        deltaServer.add(convertStringTimeToInt(tmp));
-        Log.d(tag, "ParseServer:" + deltaServer.get(deltaServer.size() - 1));
-      }
-    }
-
-    // Converts time in String format hh:mm:ss.MsMsMs (Eg: 08:47:56.637) to Integer milliseconds
-    private Integer convertStringTimeToInt(String currentTime) {
-      Integer result = 0;
-      result += (Integer.parseInt(currentTime.substring(0, 2))) * 3600000;
-      result += (Integer.parseInt(currentTime.substring(3, 5))) * 60000;
-      result += (Integer.parseInt(currentTime.substring(6, 8))) * 1000;
-      result += (Integer.parseInt(currentTime.substring(9, 12)));
-      return result;
-    }
   }
 
   private class AsyncTaskOCR extends AsyncTask<String, String, String> {
-
     @Override
     protected String doInBackground(String... strings) {
       for (int i = 0; i < frameList.size(); i++) {
@@ -199,6 +183,10 @@ public class MainActivity extends AppCompatActivity {
                         Log.d(
                             "Rokus logs",
                             "Text detected at index:" + finalI + " " + visionText.getText());
+                        framesProcessed++;
+                        if(framesProcessed == frameList.size()){
+                          parseOCR();
+                        }
                       }
                     })
                 .addOnFailureListener(
@@ -211,5 +199,44 @@ public class MainActivity extends AppCompatActivity {
       }
       return null;
     }
+  }
+
+  private void parseOCR() {
+    try {
+      String last = resultsOCR.get(0);
+      Integer recordStartTime =
+          convertStringTimeToInt(CameraFragment.Companion.getRecordingStartTime());
+      deltaOCR.add(recordStartTime);
+      Integer offset = 1000 / fps;
+      for (int i = 1; i < resultsOCR.size(); i++) {
+        if (!last.equals(resultsOCR.get(i))) {
+          last = resultsOCR.get(i);
+          deltaOCR.add(recordStartTime + (i * offset));
+          Log.d(tag, "In parseOCR:" + i + "  " + (recordStartTime + (i * offset)));
+        }
+      }
+    } catch (Exception e) {
+      Log.d("Rokus Logs:", "Parsing OCR failed with: " + e.getMessage());
+    }
+  }
+
+  // Parse timestamps received from server. Last 12 characters of time is important here.
+  private void parseServer() {
+    Integer length = serverCache.get(0).length() - 12;
+    for (int i = 0; i < serverCache.size(); i++) {
+      String tmp = serverCache.get(i).substring(length);
+      deltaServer.add(convertStringTimeToInt(tmp));
+      Log.d(tag, "ParseServer:" + deltaServer.get(deltaServer.size() - 1));
+    }
+  }
+
+  // Converts time in String format hh:mm:ss.MsMsMs (Eg: 08:47:56.637) to Integer milliseconds
+  private Integer convertStringTimeToInt(String currentTime) {
+    Integer result = 0;
+    result += (Integer.parseInt(currentTime.substring(0, 2))) * 3600000;
+    result += (Integer.parseInt(currentTime.substring(3, 5))) * 60000;
+    result += (Integer.parseInt(currentTime.substring(6, 8))) * 1000;
+    result += (Integer.parseInt(currentTime.substring(9, 12)));
+    return result;
   }
 }
