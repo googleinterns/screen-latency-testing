@@ -44,9 +44,10 @@ public class MainActivity extends AppCompatActivity {
   private Uri fileUri;
   private InputImage imageHolder;
   private TextRecognizer recognizer;
-  private ArrayList<String> results = new ArrayList<String>();
+  private ArrayList<String> resultsOCR = new ArrayList<String>();
   private ArrayList<String> serverCache = new ArrayList<String>();
-  ArrayList<Integer> deltaServer = new ArrayList<>();
+  private ArrayList<Integer> deltaServer = new ArrayList<>();
+  private List<Bitmap> frameList = new ArrayList<>();
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -110,39 +111,13 @@ public class MainActivity extends AppCompatActivity {
     mediaMetadataRetriever.setDataSource(getApplicationContext(), fileUri);
     totalFrames =
         Integer.valueOf(mediaMetadataRetriever.extractMetadata(METADATA_KEY_VIDEO_FRAME_COUNT));
-    List<Bitmap> frameList =
-        mediaMetadataRetriever.getFramesAtIndex(0, Math.max(0, totalFrames - SAFE_FRAMES));
+    frameList = mediaMetadataRetriever.getFramesAtIndex(0, Math.max(0, totalFrames - SAFE_FRAMES));
 
     AsyncTaskServer asyncTaskServer = new AsyncTaskServer();
     asyncTaskServer.execute();
 
-    for (int i = 0; i < frameList.size(); i++) {
-      // analysis will be done here (forking in a separate thread)
-      imageHolder = InputImage.fromBitmap(frameList.get(i), 0);
-      final int finalI = i;
-      Task<Text> result =
-          recognizer
-              .process(imageHolder)
-              .addOnSuccessListener(
-                  new OnSuccessListener<Text>() {
-                    @Override
-                    public void onSuccess(Text visionText) {
-                      results.add(visionText.getText());
-                      analyseResultField.append(
-                          "\n\nText detected at index:" + finalI + " " + visionText.getText());
-                      Log.d(
-                          "Rokus logs",
-                          "Text detected at index:" + finalI + " " + visionText.getText());
-                    }
-                  })
-              .addOnFailureListener(
-                  new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                      Log.d("Rokus Logs:", "Analyse failed with: " + e.getMessage());
-                    }
-                  });
-    }
+    AsyncTaskOCR asyncTaskOCR = new AsyncTaskOCR();
+    asyncTaskOCR.execute();
   }
 
   private class AsyncTaskServer extends AsyncTask<String, String, String> {
@@ -198,6 +173,38 @@ public class MainActivity extends AppCompatActivity {
       result += (Integer.parseInt(currentTime.substring(6, 8))) * 1000;
       result += (Integer.parseInt(currentTime.substring(9, 12)));
       return result;
+    }
+  }
+
+  private class AsyncTaskOCR extends AsyncTask<String, String, String> {
+
+    @Override
+    protected String doInBackground(String... strings) {
+      for (int i = 0; i < frameList.size(); i++) {
+        imageHolder = InputImage.fromBitmap(frameList.get(i), 0);
+        final int finalI = i;
+        Task<Text> result =
+            recognizer
+                .process(imageHolder)
+                .addOnSuccessListener(
+                    new OnSuccessListener<Text>() {
+                      @Override
+                      public void onSuccess(Text visionText) {
+                        resultsOCR.add(visionText.getText());
+                        Log.d(
+                            "Rokus logs",
+                            "Text detected at index:" + finalI + " " + visionText.getText());
+                      }
+                    })
+                .addOnFailureListener(
+                    new OnFailureListener() {
+                      @Override
+                      public void onFailure(@NonNull Exception e) {
+                        Log.d("Rokus Logs:", "Analyse failed with: " + e.getMessage());
+                      }
+                    });
+      }
+      return null;
     }
   }
 }
