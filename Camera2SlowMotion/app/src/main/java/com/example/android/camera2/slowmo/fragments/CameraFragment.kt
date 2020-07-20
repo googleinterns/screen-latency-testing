@@ -308,8 +308,16 @@ class CameraFragment : Fragment() {
                     // Prevents screen rotation during the video recording
                     requireActivity().requestedOrientation =
                             ActivityInfo.SCREEN_ORIENTATION_LOCKED
-                    CameraActivity.output.write("started capture*")
-                    CameraActivity.output.flush()
+                    try {
+                        CameraActivity.output.write("started capture*")
+                        CameraActivity.output.flush()
+                    } catch (exc: Throwable) {
+                        Log.d("Rokus Logs:", "Failed to send Start Capture signal")
+                        Log.d("Rokus Logs:", exc.message)
+                        Log.d("Rokus Logs:", exc.cause.toString())
+                        Log.d("Rokus Logs:", exc.stackTrace.toString())
+                    }
+
                     // Stops preview requests, and start record requests
                     session.stopRepeating()
                     session.setRepeatingBurst(recordRequestList, null, cameraHandler)

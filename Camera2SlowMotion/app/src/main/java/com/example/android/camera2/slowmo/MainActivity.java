@@ -124,11 +124,16 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected String doInBackground(String... strings) {
-      Log.d(tag, "Sending request to send cache");
-      CameraActivity.output.write("send cache" + "*");
-      CameraActivity.output.flush();
-      Log.d(tag, "Sent request to send cache");
+      if(CameraActivity.Companion.getLaptopPort()==0)
+      {
+        Log.d(tag, "No server to read input from. Check if server communication is working.");
+        return null;
+      }
       try {
+        Log.d(tag, "Sending request to send cache");
+        CameraActivity.output.write("send cache" + "*");
+        CameraActivity.output.flush();
+        Log.d(tag, "Sent request to send cache");
         String message = "";
 
         while (message != null) {
