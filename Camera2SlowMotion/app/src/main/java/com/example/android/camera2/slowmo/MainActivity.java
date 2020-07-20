@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.method.ScrollingMovementMethod;
@@ -24,6 +25,7 @@ import com.google.mlkit.vision.common.InputImage;
 import com.google.mlkit.vision.text.Text;
 import com.google.mlkit.vision.text.TextRecognition;
 import com.google.mlkit.vision.text.TextRecognizer;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,6 +33,7 @@ public class MainActivity extends AppCompatActivity {
   private Integer totalFrames = 0;
   private final Integer SAFE_FRAMES = 10;
   private final Integer FILE_PICKER_REQUEST_CODE = 10;
+  private String tag = "Rokus Logs:";
 
   private TextView filePath;
   private TextView analyseResultField;
@@ -42,6 +45,8 @@ public class MainActivity extends AppCompatActivity {
   private InputImage imageHolder;
   private TextRecognizer recognizer;
   private ArrayList<String> results = new ArrayList<String>();
+  private ArrayList<String> serverCache = new ArrayList<String>();
+  ArrayList<Integer> deltaServer = new ArrayList<>();
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -54,7 +59,7 @@ public class MainActivity extends AppCompatActivity {
     analyseResultField = findViewById(R.id.analyseResultView);
 
     analyseResultField.setMovementMethod(new ScrollingMovementMethod());
-    analyseResultField.append("Port binded:" + CameraActivity.Companion.getLaptopPort());
+    analyseResultField.append("\nPort bound:" + CameraActivity.Companion.getLaptopPort());
     recognizer = TextRecognition.getClient();
     mediaMetadataRetriever = new MediaMetadataRetriever();
     Bundle extras = getIntent().getExtras();
@@ -108,6 +113,9 @@ public class MainActivity extends AppCompatActivity {
     List<Bitmap> frameList =
         mediaMetadataRetriever.getFramesAtIndex(0, Math.max(0, totalFrames - SAFE_FRAMES));
 
+    AsyncTaskServer asyncTaskServer = new AsyncTaskServer();
+    asyncTaskServer.execute();
+
     for (int i = 0; i < frameList.size(); i++) {
       // analysis will be done here (forking in a separate thread)
       imageHolder = InputImage.fromBitmap(frameList.get(i), 0);
@@ -134,6 +142,62 @@ public class MainActivity extends AppCompatActivity {
                       Log.d("Rokus Logs:", "Analyse failed with: " + e.getMessage());
                     }
                   });
+    }
+  }
+
+  private class AsyncTaskServer extends AsyncTask<String, String, String> {
+
+    @Override
+    protected String doInBackground(String... strings) {
+      Log.d(tag, "Sending request to send cache");
+      CameraActivity.output.write("send cache" + "*");
+      CameraActivity.output.flush();
+      Log.d(tag, "Sent request to send cache");
+      try {
+        String message = "";
+
+        while (message != null) {
+          message = CameraActivity.input.readLine();
+          if (message != null) serverCache.add(message);
+          Log.d("Rokus Logs:", "Cache:" + message);
+        }
+
+      } catch (IOException e) {
+        Log.d("Rokus logs:", "Cache read failed");
+      }
+
+      return null;
+    }
+
+    @Override
+    protected void onPostExecute(String s) {
+      super.onPostExecute(s);
+      try {
+        parseServer();
+      } catch (Exception e) {
+        Log.d(tag, "Parsing server cache failed");
+        Log.d(tag, String.valueOf(e.getCause()));
+      }
+    }
+
+    // Parse timestamps received from server. Last 12 characters of time is important here.
+    private void parseServer() {
+      Integer length = serverCache.get(0).length() - 12;
+      for (int i = 0; i < serverCache.size(); i++) {
+        String tmp = serverCache.get(i).substring(length);
+        deltaServer.add(convertStringTimeToInt(tmp));
+        Log.d(tag, "ParseServer:" + deltaServer.get(deltaServer.size() - 1));
+      }
+    }
+
+    // Converts time in String format hh:mm:ss.MsMsMs (Eg: 08:47:56.637) to Integer milliseconds
+    private Integer convertStringTimeToInt(String currentTime) {
+      Integer result = 0;
+      result += (Integer.parseInt(currentTime.substring(0, 2))) * 3600000;
+      result += (Integer.parseInt(currentTime.substring(3, 5))) * 60000;
+      result += (Integer.parseInt(currentTime.substring(6, 8))) * 1000;
+      result += (Integer.parseInt(currentTime.substring(9, 12)));
+      return result;
     }
   }
 }

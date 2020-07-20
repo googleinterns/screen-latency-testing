@@ -46,11 +46,12 @@ class CameraActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_camera)
         container = findViewById(R.id.fragment_container)
-        val intent = intent
         val bundle = intent!!.extras
         laptopPort = bundle?.getString("port")?.toInt() ?: 0
         if (laptopPort != 0) {
             connectionThread.start()
+        } else {
+            Log.d("Rokus logs:", "No port information received form server")
         }
     }
 
@@ -62,11 +63,6 @@ class CameraActivity : AppCompatActivity() {
             container.systemUiVisibility = FLAGS_FULLSCREEN
         }, IMMERSIVE_FLAG_TIMEOUT)
     }
- // TODO
-//    override fun onDestroy() {
-//        super.onDestroy()
-//        connectionThread.clos
-//    }
 
     companion object {
         /** Combination of all flags required to put activity into immersive mode */
