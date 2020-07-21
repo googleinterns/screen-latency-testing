@@ -29,6 +29,7 @@ import com.google.mlkit.vision.text.TextRecognizer;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import org.jetbrains.annotations.NotNull;
 
 public class MainActivity extends AppCompatActivity {
   private Integer totalFrames = 0;
@@ -52,6 +53,7 @@ public class MainActivity extends AppCompatActivity {
   private ArrayList<Integer> deltaServer = new ArrayList<>();
   private List<Bitmap> frameList = new ArrayList<>();
   private ArrayList<Integer> deltaOCR = new ArrayList<>();
+  private ArrayList<Integer> tmpOCR = new ArrayList<>();
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -129,8 +131,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected String doInBackground(String... strings) {
-      if(CameraActivity.Companion.getLaptopPort()==0)
-      {
+      if (CameraActivity.Companion.getLaptopPort() == 0) {
         Log.d(tag, "No server to read input from. Check if server communication is working.");
         return null;
       }
@@ -184,8 +185,9 @@ public class MainActivity extends AppCompatActivity {
                             "Rokus logs",
                             "Text detected at index:" + finalI + " " + visionText.getText());
                         framesProcessed++;
-                        if(framesProcessed == frameList.size()){
+                        if (framesProcessed == frameList.size()) {
                           parseOCR();
+                          showResults();
                         }
                       }
                     })
@@ -206,11 +208,13 @@ public class MainActivity extends AppCompatActivity {
       String last = resultsOCR.get(0);
       Integer recordStartTime =
           convertStringTimeToInt(CameraFragment.Companion.getRecordingStartTime());
+      tmpOCR.add(0);
       deltaOCR.add(recordStartTime);
       Integer offset = 1000 / fps;
       for (int i = 1; i < resultsOCR.size(); i++) {
         if (!last.equals(resultsOCR.get(i))) {
           last = resultsOCR.get(i);
+          tmpOCR.add(i);
           deltaOCR.add(recordStartTime + (i * offset));
           Log.d(tag, "In parseOCR:" + i + "  " + (recordStartTime + (i * offset)));
         }
@@ -230,13 +234,31 @@ public class MainActivity extends AppCompatActivity {
     }
   }
 
-  // Converts time in String format hh:mm:ss.MsMsMs (Eg: 08:47:56.637) to Integer milliseconds
-  private Integer convertStringTimeToInt(String currentTime) {
+  // Converts time in String format hh:mm:ss.MsMsMs (Eg: 08:47:56.637) to Integer millisecondsy
+  private Integer convertStringTimeToInt(@NotNull String currentTime) {
     Integer result = 0;
     result += (Integer.parseInt(currentTime.substring(0, 2))) * 3600000;
     result += (Integer.parseInt(currentTime.substring(3, 5))) * 60000;
     result += (Integer.parseInt(currentTime.substring(6, 8))) * 1000;
     result += (Integer.parseInt(currentTime.substring(9, 12)));
     return result;
+  }
+
+  private void showResults() {
+    if (deltaServer.size() < 2 || deltaOCR.size() < 2) {
+      Log.d(tag, "No results to show");
+      return;
+    }
+    Log.d("Show Results", "Video start timestamp:" + CameraFragment.Companion.getRecordingStartTime());
+    String serverChar = "";
+    Integer sync_offset = deltaOCR.get(0) - convertStringTimeToInt(CameraFragment.Companion.getRecordingStartTime());
+    Log.d("Show Results", "Sync offset:" + sync_offset);
+    for (int i = 1; i < deltaServer.size() && i < deltaOCR.size(); i++) {
+      serverChar+="m";
+      Log.d("Show Results", "i="+ i + "\tServer Text:"+ serverChar + " Time Stamp:"+ deltaServer.get(i) + " (" +  serverCache.get(i) + ")" +
+          "\tOCR text:"+resultsOCR.get(tmpOCR.get(i)) + " Time Stamp:"+ deltaOCR.get(i) +
+          "\tLag="+ (deltaOCR.get(i) - deltaServer.get(i) + sync_offset));
+      analyseResultField.append((deltaOCR.get(i) - deltaServer.get(i) + sync_offset) + "\n");
+    }
   }
 }
