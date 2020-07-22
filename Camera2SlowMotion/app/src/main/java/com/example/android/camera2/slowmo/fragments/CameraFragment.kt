@@ -26,6 +26,7 @@ import android.hardware.camera2.params.StreamConfigurationMap
 import android.media.MediaCodec
 import android.media.MediaRecorder
 import android.media.MediaScannerConnection
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.HandlerThread
@@ -54,6 +55,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlin.concurrent.schedule
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
@@ -168,8 +170,6 @@ class CameraFragment : Fragment() {
             session.createHighSpeedRequestList(it.build())
         }
     }
-
-    private var recordingStartMillis: Long = 0L
 
     /** Live data listener for changes in the device orientation relative to the camera */
     private lateinit var relativeOrientation: OrientationLiveData
@@ -308,15 +308,6 @@ class CameraFragment : Fragment() {
                     // Prevents screen rotation during the video recording
                     requireActivity().requestedOrientation =
                             ActivityInfo.SCREEN_ORIENTATION_LOCKED
-                    try {
-                        CameraActivity.output.write("started capture*")
-                        CameraActivity.output.flush()
-                    } catch (exc: Throwable) {
-                        Log.d("Rokus Logs:", "Failed to send Start Capture signal")
-                        Log.d("Rokus Logs:", exc.message)
-                        Log.d("Rokus Logs:", exc.cause.toString())
-                        Log.d("Rokus Logs:", exc.stackTrace.toString())
-                    }
 
                     // Stops preview requests, and start record requests
                     session.stopRepeating()
@@ -329,12 +320,24 @@ class CameraFragment : Fragment() {
                         prepare()
                         start()
                     }
-                    recordingStartTime = java.time.LocalTime.now().toString()
                     recordingStartMillis = System.currentTimeMillis()
                     Log.d(TAG, "Recording started")
 
                     // Starts recording animation
                     overlay.post(animationTask)
+                    try {
+                        Timer().schedule(500){
+                            recordingStartMillis = System.currentTimeMillis()
+                            CameraActivity.output.write("started capture*")
+                            CameraActivity.output.flush()
+                        }
+
+                    } catch (exc: Throwable) {
+                        Log.d("Rokus Logs:", "Failed to send Start Capture signal")
+                        Log.d("Rokus Logs:", exc.message)
+                        Log.d("Rokus Logs:", exc.cause.toString())
+                        Log.d("Rokus Logs:", exc.stackTrace.toString())
+                    }
                 }
 
                 MotionEvent.ACTION_UP -> lifecycleScope.launch(Dispatchers.IO) {
@@ -459,6 +462,7 @@ class CameraFragment : Fragment() {
     companion object {
         private val TAG = CameraFragment::class.java.simpleName
         lateinit var recordingStartTime:String
+        var recordingStartMillis: Long = 0L
         private const val RECORDER_VIDEO_BITRATE: Int = 10000000
         private const val MIN_REQUIRED_RECORDING_TIME_MILLIS: Long = 1000L
 

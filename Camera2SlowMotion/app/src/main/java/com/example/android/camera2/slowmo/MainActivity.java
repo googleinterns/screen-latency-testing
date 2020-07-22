@@ -29,7 +29,6 @@ import com.google.mlkit.vision.text.TextRecognizer;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import org.jetbrains.annotations.NotNull;
 
 public class MainActivity extends AppCompatActivity {
   private Integer totalFrames = 0;
@@ -38,6 +37,7 @@ public class MainActivity extends AppCompatActivity {
   private final Integer FILE_PICKER_REQUEST_CODE = 10;
   private String tag = "Rokus Logs:";
   private Integer fps;
+  private Long sync_offset;
 
   private TextView filePath;
   private TextView analyseResultField;
@@ -50,10 +50,9 @@ public class MainActivity extends AppCompatActivity {
   private TextRecognizer recognizer;
   private ArrayList<String> resultsOCR = new ArrayList<String>();
   private ArrayList<String> serverCache = new ArrayList<String>();
-  private ArrayList<Integer> deltaServer = new ArrayList<>();
+  private ArrayList<Long> deltaServer = new ArrayList<>();
   private List<Bitmap> frameList = new ArrayList<>();
-  private ArrayList<Integer> deltaOCR = new ArrayList<>();
-  private ArrayList<Integer> tmpOCR = new ArrayList<>();
+  private ArrayList<Long> deltaOCR = new ArrayList<>();
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -66,7 +65,7 @@ public class MainActivity extends AppCompatActivity {
     analyseResultField = findViewById(R.id.analyseResultView);
 
     analyseResultField.setMovementMethod(new ScrollingMovementMethod());
-    analyseResultField.append("\nPort bound:" + CameraActivity.Companion.getLaptopPort());
+    analyseResultField.append("\nPort bound:" + CameraActivity.Companion.getLaptopPort() +"\n");
     recognizer = TextRecognition.getClient();
     mediaMetadataRetriever = new MediaMetadataRetriever();
     Bundle extras = getIntent().getExtras();
@@ -144,7 +143,10 @@ public class MainActivity extends AppCompatActivity {
 
         while (message != null) {
           message = CameraActivity.input.readLine();
-          if (message != null) serverCache.add(message);
+          if (message == null) {
+            break;
+          }
+          serverCache.add(message);
           Log.d("Rokus Logs:", "Cache:" + message);
         }
 
@@ -162,7 +164,9 @@ public class MainActivity extends AppCompatActivity {
         parseServer();
       } catch (Exception e) {
         Log.d(tag, "Parsing server cache failed");
-        Log.d(tag, String.valueOf(e.getCause()));
+        Log.d("Rokus Logs:", String.valueOf(e.getCause()));
+        Log.d("Rokus Logs:", e.getMessage());
+        Log.d("Rokus Logs:", String.valueOf(e.getStackTrace()));
       }
     }
   }
@@ -186,7 +190,9 @@ public class MainActivity extends AppCompatActivity {
                             "Text detected at index:" + finalI + " " + visionText.getText());
                         framesProcessed++;
                         if (framesProcessed == frameList.size()) {
+                          analyseResultField.append("OCR on all frames done\n");
                           parseOCR();
+                          analyseResultField.append("OCR frames parsed\n");
                           showResults();
                         }
                       }
@@ -205,43 +211,22 @@ public class MainActivity extends AppCompatActivity {
 
   private void parseOCR() {
     try {
-      String last = resultsOCR.get(0);
-      Integer recordStartTime =
-          convertStringTimeToInt(CameraFragment.Companion.getRecordingStartTime());
-      tmpOCR.add(0);
-      deltaOCR.add(recordStartTime);
-      Integer offset = 1000 / fps;
-      for (int i = 1; i < resultsOCR.size(); i++) {
-        if (!last.equals(resultsOCR.get(i))) {
-          last = resultsOCR.get(i);
-          tmpOCR.add(i);
-          deltaOCR.add(recordStartTime + (i * offset));
-          Log.d(tag, "In parseOCR:" + i + "  " + (recordStartTime + (i * offset)));
-        }
+      Long recordStartTime = CameraFragment.Companion.getRecordingStartMillis();
+      Long offset = 1000L / fps;
+      for (int i = 0; i < resultsOCR.size(); i++) {
+        deltaOCR.add(recordStartTime + (i * offset));
       }
     } catch (Exception e) {
       Log.d("Rokus Logs:", "Parsing OCR failed with: " + e.getMessage());
     }
   }
 
-  // Parse timestamps received from server. Last 12 characters of time is important here.
+  // Parse timestamps received from server.
   private void parseServer() {
-    Integer length = serverCache.get(0).length() - 12;
     for (int i = 0; i < serverCache.size(); i++) {
-      String tmp = serverCache.get(i).substring(length);
-      deltaServer.add(convertStringTimeToInt(tmp));
+      deltaServer.add(Long.valueOf(serverCache.get(i)));
       Log.d(tag, "ParseServer:" + deltaServer.get(deltaServer.size() - 1));
     }
-  }
-
-  // Converts time in String format hh:mm:ss.MsMsMs (Eg: 08:47:56.637) to Integer millisecondsy
-  private Integer convertStringTimeToInt(@NotNull String currentTime) {
-    Integer result = 0;
-    result += (Integer.parseInt(currentTime.substring(0, 2))) * 3600000;
-    result += (Integer.parseInt(currentTime.substring(3, 5))) * 60000;
-    result += (Integer.parseInt(currentTime.substring(6, 8))) * 1000;
-    result += (Integer.parseInt(currentTime.substring(9, 12)));
-    return result;
   }
 
   private void showResults() {
@@ -249,16 +234,22 @@ public class MainActivity extends AppCompatActivity {
       Log.d(tag, "No results to show");
       return;
     }
-    Log.d("Show Results", "Video start timestamp:" + CameraFragment.Companion.getRecordingStartTime());
-    String serverChar = "";
-    Integer sync_offset = deltaOCR.get(0) - convertStringTimeToInt(CameraFragment.Companion.getRecordingStartTime());
+    Log.d(
+        "Show Results",
+        "Video start timestamp:" + CameraFragment.Companion.getRecordingStartTime());
+    String serverSequence = "m";
+    sync_offset = deltaServer.get(0) - CameraFragment.Companion.getRecordingStartMillis();
     Log.d("Show Results", "Sync offset:" + sync_offset);
-    for (int i = 1; i < deltaServer.size() && i < deltaOCR.size(); i++) {
-      serverChar+="m";
-      Log.d("Show Results", "i="+ i + "\tServer Text:"+ serverChar + " Time Stamp:"+ deltaServer.get(i) + " (" +  serverCache.get(i) + ")" +
-          "\tOCR text:"+resultsOCR.get(tmpOCR.get(i)) + " Time Stamp:"+ deltaOCR.get(i) +
-          "\tLag="+ (deltaOCR.get(i) - deltaServer.get(i) + sync_offset));
-      analyseResultField.append((deltaOCR.get(i) - deltaServer.get(i) + sync_offset) + "\n");
+    for (int j = 1; j < deltaServer.size(); j++) {
+      for (int i = 0; i < resultsOCR.size(); i++) {
+        if (serverSequence.equals(resultsOCR.get(i))) {
+          analyseResultField.append(
+              "Lag:" + (deltaOCR.get(i) - deltaServer.get(j) + sync_offset)
+                  + " Server sequence:" + serverSequence + "\n");
+          break;
+        }
+      }
+      serverSequence += "m";
     }
   }
 }
