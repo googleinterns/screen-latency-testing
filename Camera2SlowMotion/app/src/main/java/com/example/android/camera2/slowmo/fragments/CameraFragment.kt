@@ -333,10 +333,10 @@ class CameraFragment : Fragment() {
                         }
 
                     } catch (exc: Throwable) {
-                        Log.d("Rokus Logs:", "Failed to send Start Capture signal")
-                        Log.d("Rokus Logs:", exc.message)
-                        Log.d("Rokus Logs:", exc.cause.toString())
-                        Log.d("Rokus Logs:", exc.stackTrace.toString())
+                        Log.d(TAG_AUTHOR, "Failed to send Start Capture signal")
+                        Log.d(TAG_AUTHOR, exc.message)
+                        Log.d(TAG_AUTHOR, exc.cause.toString())
+                        Log.d(TAG_AUTHOR, exc.stackTrace.toString())
                     }
                 }
 
@@ -362,18 +362,19 @@ class CameraFragment : Fragment() {
                     MediaScannerConnection.scanFile(
                             view.context, arrayOf(outputFile.absolutePath), null, null)
 
+                    val authority = "${BuildConfig.APPLICATION_ID}.provider"
+                    filePath =  FileProvider.getUriForFile(view.context, authority, outputFile).toString()
+                    fpsRecording = args.fps
+
                     // Launch analyser activity via intent
                     val intent = Intent(view.context, MainActivity::class.java)
-                    val authority = "${BuildConfig.APPLICATION_ID}.provider"
-                    intent.putExtra("file URI", FileProvider.getUriForFile(view.context, authority, outputFile).toString())
-                    intent.putExtra("video fps", args.fps.toString())
-                    Log.d("Rokus Logs:", "starting intent call in kotlin")
+                    Log.d(TAG_AUTHOR, "starting intent call in kotlin")
                     try {
                         startActivity(intent)
                     } catch (exc: Throwable) {
-                        Log.d("Rokus Logs:", exc.message)
-                        Log.d("Rokus Logs:", exc.cause.toString())
-                        Log.d("Rokus Logs:", exc.stackTrace.toString())
+                        Log.d(TAG_AUTHOR, exc.message)
+                        Log.d(TAG_AUTHOR, exc.cause.toString())
+                        Log.d(TAG_AUTHOR, exc.stackTrace.toString())
                     }
 
                     // Finishes our current camera screen
@@ -461,7 +462,9 @@ class CameraFragment : Fragment() {
 
     companion object {
         private val TAG = CameraFragment::class.java.simpleName
-        lateinit var recordingStartTime:String
+        private val TAG_AUTHOR = "Rokus Logs:"
+        lateinit var filePath:String
+        var fpsRecording:Int = 0
         var recordingStartMillis: Long = 0L
         private const val RECORDER_VIDEO_BITRATE: Int = 10000000
         private const val MIN_REQUIRED_RECORDING_TIME_MILLIS: Long = 1000L

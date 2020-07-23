@@ -30,13 +30,12 @@ import java.net.Socket
 class CameraActivity : AppCompatActivity() {
 
     private lateinit var container: FrameLayout
-    private var SERVER_IP = "127.0.0.1"
     private val connectionThread = Thread({
         try {
             socket = Socket(SERVER_IP, laptopPort)
             output = PrintWriter(socket.getOutputStream())
             input = BufferedReader(InputStreamReader(socket.getInputStream()))
-            Log.d("Rokus Logs:", "Connection established")
+            Log.d(TAG_AUTHOR, "Connection established")
         } catch (e: IOException) {
             e.printStackTrace()
         }
@@ -51,7 +50,7 @@ class CameraActivity : AppCompatActivity() {
         if (laptopPort != 0) {
             connectionThread.start()
         } else {
-            Log.d("Rokus logs:", "No port information received form server")
+            Log.d(TAG_AUTHOR, "No port information received form server. Unable to establish connection.")
         }
     }
 
@@ -75,10 +74,12 @@ class CameraActivity : AppCompatActivity() {
         /** Milliseconds used for UI animations */
         const val ANIMATION_FAST_MILLIS = 50L
         const val ANIMATION_SLOW_MILLIS = 100L
+        private const val SERVER_IP = "127.0.0.1"
         private const val IMMERSIVE_FLAG_TIMEOUT = 500L
         var laptopPort: Int = 0
         lateinit var output:PrintWriter
         lateinit var input:BufferedReader
         lateinit var socket: Socket
+        private const val TAG_AUTHOR = "Rokus Logs:"
     }
 }

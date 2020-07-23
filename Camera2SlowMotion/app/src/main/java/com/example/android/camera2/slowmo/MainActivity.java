@@ -35,9 +35,10 @@ public class MainActivity extends AppCompatActivity {
   private Integer framesProcessed = 0;
   private final Integer SAFE_FRAMES = 10;
   private final Integer FILE_PICKER_REQUEST_CODE = 10;
-  private String tag = "Rokus Logs:";
-  private Integer fps;
-  private Long sync_offset;
+  private final String TAG_AUTHOR = "Rokus Logs:";
+  private Long syncOffset;
+  private Long recordStartTime = CameraFragment.Companion.getRecordingStartMillis();
+  private Long frameDuration = 1000L / CameraFragment.Companion.getFpsRecording();
 
   private TextView filePath;
   private TextView analyseResultField;
@@ -49,10 +50,9 @@ public class MainActivity extends AppCompatActivity {
   private InputImage imageHolder;
   private TextRecognizer recognizer;
   private ArrayList<String> resultsOCR = new ArrayList<String>();
-  private ArrayList<String> serverCache = new ArrayList<String>();
-  private ArrayList<Long> deltaServer = new ArrayList<>();
+  private ArrayList<Long> serverTimestamp = new ArrayList<>();
   private List<Bitmap> frameList = new ArrayList<>();
-  private ArrayList<Long> deltaOCR = new ArrayList<>();
+  private ArrayList<Long> videoFrameTimestamp = new ArrayList<>();
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -65,17 +65,12 @@ public class MainActivity extends AppCompatActivity {
     analyseResultField = findViewById(R.id.analyseResultView);
 
     analyseResultField.setMovementMethod(new ScrollingMovementMethod());
-    analyseResultField.append("\nPort bound:" + CameraActivity.Companion.getLaptopPort() +"\n");
+    analyseResultField.append("\nPort bound:" + CameraActivity.Companion.getLaptopPort() + "\n");
     recognizer = TextRecognition.getClient();
     mediaMetadataRetriever = new MediaMetadataRetriever();
-    Bundle extras = getIntent().getExtras();
-
-    try {
-      filePath.setText(extras.getString("file URI"));
-      fps = Integer.valueOf(extras.getString("video fps"));
-    } catch (Exception e) {
-      Log.d("Rokus logs:", "Integration failed, no file URI received from capture session");
-    }
+    if (CameraFragment.Companion.getFilePath() != null)
+      filePath.setText(CameraFragment.Companion.getFilePath());
+    else Log.d(TAG_AUTHOR, "No FilePath was set in capture session.");
 
     filePickerBtn.setOnClickListener(
         new View.OnClickListener() {
@@ -95,7 +90,7 @@ public class MainActivity extends AppCompatActivity {
             try {
               analyze();
             } catch (Exception e) {
-              Log.d("Rokus Logs:", "Analyse call failed with: " + e.getMessage());
+              Log.d(TAG_AUTHOR, "Analyse call failed with: " + e.getMessage());
             }
           }
         });
@@ -117,63 +112,45 @@ public class MainActivity extends AppCompatActivity {
     mediaMetadataRetriever.setDataSource(getApplicationContext(), fileUri);
     totalFrames =
         Integer.valueOf(mediaMetadataRetriever.extractMetadata(METADATA_KEY_VIDEO_FRAME_COUNT));
+    // TODO: Add on demand frame read opposed to read all frames.
     frameList = mediaMetadataRetriever.getFramesAtIndex(0, Math.max(0, totalFrames - SAFE_FRAMES));
 
-    AsyncTaskServer asyncTaskServer = new AsyncTaskServer();
-    asyncTaskServer.execute();
+    DownloadServerLogs downloadServerLogsTask = new DownloadServerLogs();
+    downloadServerLogsTask.execute();
 
-    AsyncTaskOCR asyncTaskOCR = new AsyncTaskOCR();
-    asyncTaskOCR.execute();
+    AnalyseVideo ocrOnVideoTask = new AnalyseVideo();
+    ocrOnVideoTask.execute();
   }
 
-  private class AsyncTaskServer extends AsyncTask<String, String, String> {
+  private class DownloadServerLogs extends AsyncTask<Void, Void, Void> {
 
     @Override
-    protected String doInBackground(String... strings) {
+    protected Void doInBackground(Void... values) {
       if (CameraActivity.Companion.getLaptopPort() == 0) {
-        Log.d(tag, "No server to read input from. Check if server communication is working.");
-        return null;
+        Log.d(TAG_AUTHOR, "No server to read input from. Check if server communication is working.");
       }
       try {
-        Log.d(tag, "Sending request to send cache");
+        Log.d(TAG_AUTHOR, "Sending request to send cache");
         CameraActivity.output.write("send cache" + "*");
         CameraActivity.output.flush();
-        Log.d(tag, "Sent request to send cache");
-        String message = "";
+        Log.d(TAG_AUTHOR, "Sent request to send cache");
+        String message = CameraActivity.input.readLine();
 
         while (message != null) {
+          serverTimestamp.add(Long.valueOf(message));
+          Log.d(TAG_AUTHOR, "Cache:" + message);
           message = CameraActivity.input.readLine();
-          if (message == null) {
-            break;
-          }
-          serverCache.add(message);
-          Log.d("Rokus Logs:", "Cache:" + message);
         }
-
       } catch (IOException e) {
-        Log.d("Rokus logs:", "Cache read failed");
+        Log.d(TAG_AUTHOR, "Cache read failed");
       }
-
       return null;
-    }
-
-    @Override
-    protected void onPostExecute(String s) {
-      super.onPostExecute(s);
-      try {
-        parseServer();
-      } catch (Exception e) {
-        Log.d(tag, "Parsing server cache failed");
-        Log.d("Rokus Logs:", String.valueOf(e.getCause()));
-        Log.d("Rokus Logs:", e.getMessage());
-        Log.d("Rokus Logs:", String.valueOf(e.getStackTrace()));
-      }
     }
   }
 
-  private class AsyncTaskOCR extends AsyncTask<String, String, String> {
+  private class AnalyseVideo extends AsyncTask<Void, Void, Void> {
     @Override
-    protected String doInBackground(String... strings) {
+    protected Void doInBackground(Void... values) {
       for (int i = 0; i < frameList.size(); i++) {
         imageHolder = InputImage.fromBitmap(frameList.get(i), 0);
         final int finalI = i;
@@ -188,12 +165,11 @@ public class MainActivity extends AppCompatActivity {
                         Log.d(
                             "Rokus logs",
                             "Text detected at index:" + finalI + " " + visionText.getText());
+                        setFrameTimeStamp();
                         framesProcessed++;
                         if (framesProcessed == frameList.size()) {
                           analyseResultField.append("OCR on all frames done\n");
-                          parseOCR();
-                          analyseResultField.append("OCR frames parsed\n");
-                          showResults();
+                          calculateLag();
                         }
                       }
                     })
@@ -201,7 +177,7 @@ public class MainActivity extends AppCompatActivity {
                     new OnFailureListener() {
                       @Override
                       public void onFailure(@NonNull Exception e) {
-                        Log.d("Rokus Logs:", "Analyse failed with: " + e.getMessage());
+                        Log.d(TAG_AUTHOR, "Analyse failed with: " + e.getMessage());
                       }
                     });
       }
@@ -209,42 +185,33 @@ public class MainActivity extends AppCompatActivity {
     }
   }
 
-  private void parseOCR() {
+  private void setFrameTimeStamp() {
     try {
-      Long recordStartTime = CameraFragment.Companion.getRecordingStartMillis();
-      Long offset = 1000L / fps;
-      for (int i = 0; i < resultsOCR.size(); i++) {
-        deltaOCR.add(recordStartTime + (i * offset));
-      }
+      videoFrameTimestamp.add(recordStartTime + (framesProcessed * frameDuration));
     } catch (Exception e) {
-      Log.d("Rokus Logs:", "Parsing OCR failed with: " + e.getMessage());
+      videoFrameTimestamp.add(0L);
+      Log.d(TAG_AUTHOR, "Unable to set timeStamp of frame= " + framesProcessed);
+      Log.d(TAG_AUTHOR, e.getMessage());
     }
   }
 
-  // Parse timestamps received from server.
-  private void parseServer() {
-    for (int i = 0; i < serverCache.size(); i++) {
-      deltaServer.add(Long.valueOf(serverCache.get(i)));
-      Log.d(tag, "ParseServer:" + deltaServer.get(deltaServer.size() - 1));
-    }
-  }
-
-  private void showResults() {
-    if (deltaServer.size() < 2 || deltaOCR.size() < 2) {
-      Log.d(tag, "No results to show");
+  private void calculateLag() {
+    if (serverTimestamp.size() < 2 || videoFrameTimestamp.size() < 2) {
+      Log.d(TAG_AUTHOR, "No results to show");
       return;
     }
     Log.d(
         "Show Results",
-        "Video start timestamp:" + CameraFragment.Companion.getRecordingStartTime());
+        "Video start timestamp:" + recordStartTime);
+    //TODO: Server sequence is hardcoded. Add functionality to receive serverSequence.
     String serverSequence = "m";
-    sync_offset = deltaServer.get(0) - CameraFragment.Companion.getRecordingStartMillis();
-    Log.d("Show Results", "Sync offset:" + sync_offset);
-    for (int j = 1; j < deltaServer.size(); j++) {
+    syncOffset = serverTimestamp.get(0) - CameraFragment.Companion.getRecordingStartMillis();
+    Log.d("Show Results", "Sync offset:" + syncOffset);
+    for (int j = 1; j < serverTimestamp.size(); j++) {
       for (int i = 0; i < resultsOCR.size(); i++) {
         if (serverSequence.equals(resultsOCR.get(i))) {
           analyseResultField.append(
-              "Lag:" + (deltaOCR.get(i) - deltaServer.get(j) + sync_offset)
+              "Lag:" + (videoFrameTimestamp.get(i) - serverTimestamp.get(j) + syncOffset)
                   + " Server sequence:" + serverSequence + "\n");
           break;
         }
