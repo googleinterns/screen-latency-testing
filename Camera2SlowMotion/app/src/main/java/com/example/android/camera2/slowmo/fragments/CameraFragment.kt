@@ -326,7 +326,7 @@ class CameraFragment : Fragment() {
                     // Starts recording animation
                     overlay.post(animationTask)
                     try {
-                        Timer().schedule(500){
+                        Timer().schedule(CAMERA_START_DELAY){
                             recordingStartMillis = System.currentTimeMillis()
                             CameraActivity.output.write("started capture*")
                             CameraActivity.output.flush()
@@ -468,6 +468,7 @@ class CameraFragment : Fragment() {
         var recordingStartMillis: Long = 0L
         private const val RECORDER_VIDEO_BITRATE: Int = 10000000
         private const val MIN_REQUIRED_RECORDING_TIME_MILLIS: Long = 1000L
+        private const val CAMERA_START_DELAY = 500L
 
         /**
          * FPS rate for preview-only requests, 30 is *guaranteed* by framework. See:

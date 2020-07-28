@@ -130,19 +130,19 @@ public class MainActivity extends AppCompatActivity {
         Log.d(TAG_AUTHOR, "No server to read input from. Check if server communication is working.");
       }
       try {
-        Log.d(TAG_AUTHOR, "Sending request to send cache");
-        CameraActivity.output.write("send cache" + "*");
+        Log.d(TAG_AUTHOR, "Sending request to send TimeStamps");
+        CameraActivity.output.write("send timestamps" + "*");
         CameraActivity.output.flush();
-        Log.d(TAG_AUTHOR, "Sent request to send cache");
+        Log.d(TAG_AUTHOR, "Sent request to send TimeStamps");
         String message = CameraActivity.input.readLine();
 
         while (message != null) {
           serverTimestamp.add(Long.valueOf(message));
-          Log.d(TAG_AUTHOR, "Cache:" + message);
+          Log.d(TAG_AUTHOR, "Server TimeStamp:" + message);
           message = CameraActivity.input.readLine();
         }
       } catch (IOException e) {
-        Log.d(TAG_AUTHOR, "Cache read failed");
+        Log.d(TAG_AUTHOR, "Server TimeStamp read failed");
       }
       return null;
     }
