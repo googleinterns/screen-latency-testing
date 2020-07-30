@@ -26,6 +26,7 @@ import android.hardware.camera2.params.StreamConfigurationMap
 import android.media.MediaCodec
 import android.media.MediaRecorder
 import android.media.MediaScannerConnection
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.HandlerThread
@@ -54,6 +55,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlin.concurrent.schedule
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
@@ -168,8 +170,6 @@ class CameraFragment : Fragment() {
             session.createHighSpeedRequestList(it.build())
         }
     }
-
-    private var recordingStartMillis: Long = 0L
 
     /** Live data listener for changes in the device orientation relative to the camera */
     private lateinit var relativeOrientation: OrientationLiveData
@@ -325,6 +325,19 @@ class CameraFragment : Fragment() {
 
                     // Starts recording animation
                     overlay.post(animationTask)
+                    try {
+                        Timer().schedule(CAMERA_START_DELAY){
+                            recordingStartMillis = System.currentTimeMillis()
+                            CameraActivity.output.write("started capture*")
+                            CameraActivity.output.flush()
+                        }
+
+                    } catch (exc: Throwable) {
+                        Log.d(TAG_AUTHOR, "Failed to send Start Capture signal")
+                        Log.d(TAG_AUTHOR, exc.message)
+                        Log.d(TAG_AUTHOR, exc.cause.toString())
+                        Log.d(TAG_AUTHOR, exc.stackTrace.toString())
+                    }
                 }
 
                 MotionEvent.ACTION_UP -> lifecycleScope.launch(Dispatchers.IO) {
@@ -349,17 +362,19 @@ class CameraFragment : Fragment() {
                     MediaScannerConnection.scanFile(
                             view.context, arrayOf(outputFile.absolutePath), null, null)
 
+                    val authority = "${BuildConfig.APPLICATION_ID}.provider"
+                    filePath =  FileProvider.getUriForFile(view.context, authority, outputFile).toString()
+                    fpsRecording = args.fps
+
                     // Launch analyser activity via intent
                     val intent = Intent(view.context, MainActivity::class.java)
-                    val authority = "${BuildConfig.APPLICATION_ID}.provider"
-                    intent.putExtra("file URI", FileProvider.getUriForFile(view.context, authority, outputFile).toString())
-                    Log.d("Rokus Logs:", "starting intent call in kotlin")
+                    Log.d(TAG_AUTHOR, "starting intent call in kotlin")
                     try {
                         startActivity(intent)
                     } catch (exc: Throwable) {
-                        Log.d("Rokus Logs:", exc.message)
-                        Log.d("Rokus Logs:", exc.cause.toString())
-                        Log.d("Rokus Logs:", exc.stackTrace.toString())
+                        Log.d(TAG_AUTHOR, exc.message)
+                        Log.d(TAG_AUTHOR, exc.cause.toString())
+                        Log.d(TAG_AUTHOR, exc.stackTrace.toString())
                     }
 
                     // Finishes our current camera screen
@@ -447,9 +462,13 @@ class CameraFragment : Fragment() {
 
     companion object {
         private val TAG = CameraFragment::class.java.simpleName
-
+        private val TAG_AUTHOR = "Rokus Logs:"
+        lateinit var filePath:String
+        var fpsRecording:Int = 0
+        var recordingStartMillis: Long = 0L
         private const val RECORDER_VIDEO_BITRATE: Int = 10000000
         private const val MIN_REQUIRED_RECORDING_TIME_MILLIS: Long = 1000L
+        private const val CAMERA_START_DELAY = 500L
 
         /**
          * FPS rate for preview-only requests, 30 is *guaranteed* by framework. See:
