@@ -16,61 +16,87 @@
 
 package com.example.android.camera2.slowmo.fragments
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.pm.PackageManager
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraManager
 import android.os.Bundle
 import android.util.Size
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
-import android.widget.TextView
+import android.widget.Toast
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.navigation.Navigation
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import com.example.android.camera.utils.GenericListAdapter
 import com.example.android.camera2.slowmo.R
 
+private const val PERMISSIONS_REQUEST_CODE = 10
+private val PERMISSIONS_REQUIRED = arrayOf(
+        Manifest.permission.CAMERA,
+        Manifest.permission.RECORD_AUDIO)
+
 /**
- * In this [Fragment] we let users pick a camera, size and FPS to use for high
- * speed video recording
+ * This [Fragment] requests permissions and, once granted, it will navigate to the next fragment
+ * with the lowest camera settings available.
  */
-class SelectorFragment : Fragment() {
+class PermissionsAndCameraSettingFragment : Fragment() {
 
-    override fun onCreateView(
-            inflater: LayoutInflater,
-            container: ViewGroup?,
-            savedInstanceState: Bundle?
-    ): View? = RecyclerView(requireContext())
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
 
-    @SuppressLint("MissingPermission")
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        view as RecyclerView
-        view.apply {
-            layoutManager = LinearLayoutManager(requireContext())
+        val cameraManager =
+                requireContext().getSystemService(Context.CAMERA_SERVICE) as CameraManager
 
-            val cameraManager =
-                    requireContext().getSystemService(Context.CAMERA_SERVICE) as CameraManager
+        val cameraList = enumerateHighSpeedCameras(cameraManager)
 
-            val cameraList = enumerateHighSpeedCameras(cameraManager)
+        lowestSetting = findLowestCameraSetting(cameraList)
 
-            val layoutId = android.R.layout.simple_list_item_1
-            adapter = GenericListAdapter(cameraList, itemLayoutId = layoutId) { view, item, _ ->
-                view.findViewById<TextView>(android.R.id.text1).text = item.title
-                view.setOnClickListener {
-                    Navigation.findNavController(requireActivity(), R.id.fragment_container)
-                            .navigate(SelectorFragmentDirections.actionSelectorToCamera(
-                                    item.cameraId, item.size.width, item.size.height, item.fps))
-                }
+        if (hasPermissions(requireContext())) {
+            // If permissions have already been granted, proceed
+            Navigation.findNavController(requireActivity(), R.id.fragment_container).navigate(
+                    PermissionsFragmentDirections.actionPermissionsFragmentToCameraFragment2(
+                    lowestSetting.cameraId, lowestSetting.size.width, lowestSetting.size.height, lowestSetting.fps))
+        } else {
+            // Request camera-related permissions
+            requestPermissions(PERMISSIONS_REQUIRED, PERMISSIONS_REQUEST_CODE)
+        }
+    }
+
+    /** Selects the lowest camera fps and the lowest image capture resolution available among them.*/
+    private fun findLowestCameraSetting(cameraList: List<CameraInfo>): CameraInfo {
+        var bestLowestSettingSeen = cameraList.get(0)
+        for (setting in cameraList) {
+            if (setting.fps <= bestLowestSettingSeen.fps &&
+                    setting.size.width <= bestLowestSettingSeen.size.width &&
+                    setting.size.height <= bestLowestSettingSeen.size.height) {
+                bestLowestSettingSeen = setting
             }
         }
+        return bestLowestSettingSeen
+    }
 
+    override fun onRequestPermissionsResult(
+            requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == PERMISSIONS_REQUEST_CODE) {
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // Takes the user to the success fragment when permission is granted
+                Navigation.findNavController(requireActivity(), R.id.fragment_container).navigate(
+                        PermissionsFragmentDirections.actionPermissionsFragmentToCameraFragment2(lowestSetting.cameraId, lowestSetting.size.width, lowestSetting.size.height, lowestSetting.fps))
+            } else {
+                Toast.makeText(context, "Permission request denied", Toast.LENGTH_LONG).show()
+            }
+        }
     }
 
     companion object {
+
+        /** Convenience method used to check if all permissions required by this app are granted */
+        fun hasPermissions(context: Context) = PERMISSIONS_REQUIRED.all {
+            ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
+        }
+
+        private lateinit var lowestSetting: CameraInfo
 
         private data class CameraInfo(
                 val title: String,
@@ -79,7 +105,7 @@ class SelectorFragment : Fragment() {
                 val fps: Int)
 
         /** Converts a lens orientation enum into a human-readable string */
-        private fun lensOrientationString(value: Int) = when(value) {
+        private fun lensOrientationString(value: Int) = when (value) {
             CameraCharacteristics.LENS_FACING_BACK -> "Back"
             CameraCharacteristics.LENS_FACING_FRONT -> "Front"
             CameraCharacteristics.LENS_FACING_EXTERNAL -> "External"
