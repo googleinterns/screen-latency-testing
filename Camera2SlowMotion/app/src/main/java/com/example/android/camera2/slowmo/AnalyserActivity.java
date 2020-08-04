@@ -18,13 +18,9 @@ import com.example.android.camera2.slowmo.fragments.CameraFragment;
 
 /** This class handles the lifecycle of lag calculation. */
 public class AnalyserActivity extends AppCompatActivity {
-  private final Integer FILE_PICKER_REQUEST_CODE = 10;
-
   private TextView filePath;
   private TextView analyseResultField;
-  private Button filePickerBtn;
   private Button analyzeBtn;
-  private Intent fileIntent;
   private Uri fileUri;
 
   private VideoProcessor videoProcessor;
@@ -37,7 +33,6 @@ public class AnalyserActivity extends AppCompatActivity {
     setContentView(R.layout.activity_analyser);
 
     filePath = findViewById(R.id.selectedFilePath);
-    filePickerBtn = findViewById(R.id.fileSelectButton);
     analyzeBtn = findViewById(R.id.analyze);
     analyseResultField = findViewById(R.id.analyseResultView);
 
@@ -54,16 +49,7 @@ public class AnalyserActivity extends AppCompatActivity {
 
     CameraFragment.Companion.getFilePath();
     filePath.setText(CameraFragment.Companion.getFilePath());
-
-    filePickerBtn.setOnClickListener(
-        new View.OnClickListener() {
-          @Override
-          public void onClick(View view) {
-            fileIntent = new Intent(Intent.ACTION_GET_CONTENT);
-            fileIntent.setType("*/*");
-            startActivityForResult(fileIntent, FILE_PICKER_REQUEST_CODE);
-          }
-        });
+    fileUri = Uri.parse(CameraFragment.Companion.getFilePath());
 
     analyzeBtn.setOnClickListener(
         new View.OnClickListener() {
@@ -79,20 +65,9 @@ public class AnalyserActivity extends AppCompatActivity {
         });
   }
 
-  @Override
-  protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-    super.onActivityResult(requestCode, resultCode, data);
-    if (requestCode == FILE_PICKER_REQUEST_CODE && resultCode == RESULT_OK) {
-      String path = data.getData().toString();
-      fileUri = data.getData();
-      filePath.setText(path);
-    }
-  }
-
   /** Triggers subsequent lifecycle events of lag calculations. */
   @RequiresApi(api = Build.VERSION_CODES.P)
   private void analyze() {
-    fileUri = Uri.parse(filePath.getText().toString());
     videoProcessor.setVideoReader(getApplicationContext(), fileUri);
 
     CameraActivity.serverHandler.downloadServerTimeStamps();
