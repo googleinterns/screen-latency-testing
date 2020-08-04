@@ -26,7 +26,6 @@ import android.hardware.camera2.params.StreamConfigurationMap
 import android.media.MediaCodec
 import android.media.MediaRecorder
 import android.media.MediaScannerConnection
-import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.HandlerThread
@@ -34,6 +33,7 @@ import android.util.Log
 import android.util.Range
 import android.util.Size
 import android.view.*
+import androidx.annotation.NonNull
 import androidx.core.content.FileProvider
 import androidx.core.graphics.drawable.toDrawable
 import androidx.fragment.app.Fragment
@@ -45,7 +45,7 @@ import androidx.navigation.fragment.navArgs
 import com.example.android.camera.utils.*
 import com.example.android.camera2.slowmo.BuildConfig
 import com.example.android.camera2.slowmo.CameraActivity
-import com.example.android.camera2.slowmo.MainActivity
+import com.example.android.camera2.slowmo.AnalyserActivity
 import com.example.android.camera2.slowmo.R
 import kotlinx.android.synthetic.main.fragment_camera.*
 import kotlinx.coroutines.Dispatchers
@@ -53,6 +53,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import java.io.File
+import java.lang.Exception
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.concurrent.schedule
@@ -327,16 +328,15 @@ class CameraFragment : Fragment() {
                     overlay.post(animationTask)
                     try {
                         Timer().schedule(CAMERA_START_DELAY){
-                            recordingStartMillis = System.currentTimeMillis()
-                            CameraActivity.output.write("started capture*")
-                            CameraActivity.output.flush()
+                            CameraActivity.serverHandler.hostSyncTimeStamp = System.currentTimeMillis()
+                            CameraActivity.serverHandler.outputWriter.write("started capture*")
+                            CameraActivity.serverHandler.outputWriter.flush()
                         }
-
-                    } catch (exc: Throwable) {
-                        Log.d(TAG_AUTHOR, "Failed to send Start Capture signal")
-                        Log.d(TAG_AUTHOR, exc.message)
-                        Log.d(TAG_AUTHOR, exc.cause.toString())
-                        Log.d(TAG_AUTHOR, exc.stackTrace.toString())
+                    } catch (exc: Exception) {
+                        Log.d(TAG, "Failed to send Start Capture signal")
+                        Log.d(TAG, exc.message.toString())
+                        Log.d(TAG, exc.cause.toString())
+                        Log.d(TAG, exc.stackTrace.toString())
                     }
                 }
 
@@ -367,15 +367,8 @@ class CameraFragment : Fragment() {
                     fpsRecording = args.fps
 
                     // Launch analyser activity via intent
-                    val intent = Intent(view.context, MainActivity::class.java)
-                    Log.d(TAG_AUTHOR, "starting intent call in kotlin")
-                    try {
-                        startActivity(intent)
-                    } catch (exc: Throwable) {
-                        Log.d(TAG_AUTHOR, exc.message)
-                        Log.d(TAG_AUTHOR, exc.cause.toString())
-                        Log.d(TAG_AUTHOR, exc.stackTrace.toString())
-                    }
+                    val intent = Intent(view.context, AnalyserActivity::class.java)
+                    startActivity(intent)
 
                     // Finishes our current camera screen
                     delay(CameraActivity.ANIMATION_SLOW_MILLIS)
@@ -462,13 +455,12 @@ class CameraFragment : Fragment() {
 
     companion object {
         private val TAG = CameraFragment::class.java.simpleName
-        private val TAG_AUTHOR = "Rokus Logs:"
+        private const val RECORDER_VIDEO_BITRATE: Int = 10000000
+        private const val MIN_REQUIRED_RECORDING_TIME_MILLIS: Long = 1000L
+        private const val CAMERA_START_DELAY = 550L
         lateinit var filePath:String
         var fpsRecording:Int = 0
         var recordingStartMillis: Long = 0L
-        private const val RECORDER_VIDEO_BITRATE: Int = 10000000
-        private const val MIN_REQUIRED_RECORDING_TIME_MILLIS: Long = 1000L
-        private const val CAMERA_START_DELAY = 500L
 
         /**
          * FPS rate for preview-only requests, 30 is *guaranteed* by framework. See:

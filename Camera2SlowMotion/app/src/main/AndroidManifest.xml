@@ -45,7 +45,7 @@
 
         </activity>
         <activity
-            android:name="com.example.android.camera2.slowmo.MainActivity"
+            android:name="com.example.android.camera2.slowmo.AnalyserActivity"
             android:theme="@style/AppTheme">
         </activity>
 
