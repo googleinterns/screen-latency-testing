@@ -16,6 +16,7 @@ import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import com.example.android.camera2.slowmo.fragments.CameraFragment;
 
+/** This class handles the lifecycle of lag calculation. */
 public class AnalyserActivity extends AppCompatActivity {
   private final Integer FILE_PICKER_REQUEST_CODE = 10;
 
@@ -88,6 +89,7 @@ public class AnalyserActivity extends AppCompatActivity {
     }
   }
 
+  /** Triggers subsequent lifecycle events of lag calculations. */
   @RequiresApi(api = Build.VERSION_CODES.P)
   private void analyze() {
     fileUri = Uri.parse(filePath.getText().toString());
@@ -100,6 +102,8 @@ public class AnalyserActivity extends AppCompatActivity {
     resultPublisher.execute(lagCalculator);
   }
 
+  /** A background threads which listens for the results of LagCalculator and shows the results
+   * when available to TextView.*/
   private class ResultPublisher extends AsyncTask<LagCalculator, Void, Void> {
     private Integer resultPublishedCount = 0;
 

@@ -4,6 +4,10 @@ import android.content.ContentValues;
 import android.util.Log;
 import java.util.ArrayList;
 
+/**
+ * Calculates lag of each key-press on the server using the key-press timestamps from server and
+ * character seen timestamp from recorded video.
+ */
 public class LagCalculator {
   private VideoProcessor videoData;
   private ServerHandler serverData;
@@ -30,6 +34,7 @@ public class LagCalculator {
     ArrayList<Long> videoFrameTimestamp = videoData.getVideoFrameTimestamp();
     ArrayList<String> resultsOCR = videoData.getResultsOCR();
 
+    // Finds the video frame with the running serverSequence text.
     for (int j = 1; j < serverTimestamp.size(); j++) {
       for (int i = 0; i < resultsOCR.size(); i++) {
         if (serverSequence.equals(resultsOCR.get(i))) {

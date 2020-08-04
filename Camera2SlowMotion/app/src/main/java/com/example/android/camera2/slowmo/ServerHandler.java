@@ -10,6 +10,7 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.ArrayList;
 
+/** Handles every interaction of app with the server. */
 public class ServerHandler {
 
   private Integer serverSocketPort;
@@ -20,7 +21,6 @@ public class ServerHandler {
   private Socket socket;
   public BufferedReader inputReader;
   public PrintWriter outputWriter;
-
   private Long hostSyncTimeStamp;
 
   public Long getHostSyncTimeStamp() {
@@ -52,6 +52,8 @@ public class ServerHandler {
     connectionThread.execute();
   }
 
+  /** Creates a socket for communication with the server. Sets reader and writer for server
+   * connection. */
   private class ConnectionThread extends AsyncTask<Void, Void, Void> {
 
     @Override
@@ -77,6 +79,7 @@ public class ServerHandler {
     downloadServerLogsTask.execute();
   }
 
+  /** Requests the server to send the timestamps of key-presses. */
   private class DownloadServerLogs extends AsyncTask<Void, Void, Void> {
     @Override
     protected Void doInBackground(Void... values) {

@@ -23,6 +23,11 @@ import com.google.mlkit.vision.text.TextRecognizer;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Loads recorded video file into media-reader, attach timestamps to individual video frames and
+ * requests Ocr on each frame. Upon Ocr processing of all frames it requests LagCalculator class to
+ * further compute the lag results.
+ */
 public class VideoProcessor {
 
   private static final Integer SAFE_FRAMES = 10;
@@ -49,6 +54,8 @@ public class VideoProcessor {
     return resultsOCR;
   }
 
+  /** Sets media-reader and loads available video frames. SAFE_FRAMES trims potential corrupted
+   * frames from the end.*/
   @RequiresApi(api = VERSION_CODES.P)
   public void setVideoReader(Context applicationContext, Uri fileUri) {
     recognizer = TextRecognition.getClient();
@@ -61,6 +68,8 @@ public class VideoProcessor {
     frameList = mediaMetadataRetriever.getFramesAtIndex(0, Math.max(0, totalFrames - SAFE_FRAMES));
   }
 
+  /** Convenience method used to assign frame timestamps to individual frames based on video
+   * recording start time and the fps of video. */
   private void setNextFrameTimeStamp() {
     videoFrameTimestamp.add(recordStartTime + (framesProcessed * frameDuration));
   }
@@ -70,6 +79,8 @@ public class VideoProcessor {
     ocrOnVideoTask.execute(lagCalculator);
   }
 
+  /** Iterates on video frames issuing an Ocr request. Requests video-frame timestamp assignment.
+   * Calls LagCalculator upon Ocr completion of all video frame.*/
   private class AnalyseVideo extends AsyncTask<LagCalculator, Void, Void> {
     @Override
     protected Void doInBackground(LagCalculator... lagCalculators) {
