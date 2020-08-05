@@ -17,9 +17,13 @@
 package com.example.android.camera2.slowmo.fragments
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
+import android.hardware.camera2.CameraCharacteristics
+import android.hardware.camera2.CameraManager
 import android.os.Bundle
+import android.util.Size
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
@@ -31,18 +35,20 @@ private val PERMISSIONS_REQUIRED = arrayOf(
         Manifest.permission.CAMERA,
         Manifest.permission.RECORD_AUDIO)
 
+// TODO: Change fragment name in refactor commit. Waiting for merge of CameraActivity and AnalyserActivity.
 /**
  * This [Fragment] requests permissions and, once granted, it will navigate to the next fragment
+ * with the lowest camera settings available.
  */
 class PermissionsFragment : Fragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
+        
         if (hasPermissions(requireContext())) {
             // If permissions have already been granted, proceed
             Navigation.findNavController(requireActivity(), R.id.fragment_container).navigate(
-                    PermissionsFragmentDirections.actionPermissionsToSelector())
+                    PermissionsFragmentDirections.actionPermissionsFragmentToCameraFragment())
         } else {
             // Request camera-related permissions
             requestPermissions(PERMISSIONS_REQUIRED, PERMISSIONS_REQUEST_CODE)
@@ -56,9 +62,10 @@ class PermissionsFragment : Fragment() {
             if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 // Takes the user to the success fragment when permission is granted
                 Navigation.findNavController(requireActivity(), R.id.fragment_container).navigate(
-                        PermissionsFragmentDirections.actionPermissionsToSelector())
+                        PermissionsFragmentDirections.actionPermissionsFragmentToCameraFragment())
             } else {
-                Toast.makeText(context, "Permission request denied", Toast.LENGTH_LONG).show()
+                // TODO: Notify server of this failure for granting permissions.
+                Toast.makeText(context, "Permission request denied. You must grant permissions for this app to function. Please restart the app and grant permissions.", Toast.LENGTH_LONG).show()
             }
         }
     }
