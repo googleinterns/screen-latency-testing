@@ -2,6 +2,7 @@ package com.example.android.camera2.slowmo;
 
 import static android.media.MediaMetadataRetriever.METADATA_KEY_VIDEO_FRAME_COUNT;
 
+import android.content.ContentValues;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.media.MediaMetadataRetriever;
@@ -33,7 +34,7 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity {
   private Integer totalFrames = 0;
   private Integer framesProcessed = 0;
-  private final Integer SAFE_FRAMES = 10;
+  private final Integer FRAME_CHUNK_READ_SIZE = 100;
   private final Integer FILE_PICKER_REQUEST_CODE = 10;
   private final String TAG_AUTHOR = "Rokus Logs:";
   private Long syncOffset;
@@ -113,8 +114,16 @@ public class MainActivity extends AppCompatActivity {
     totalFrames =
         Integer.valueOf(mediaMetadataRetriever.extractMetadata(METADATA_KEY_VIDEO_FRAME_COUNT));
     // TODO: Add on demand frame read opposed to read all frames.
-    frameList = mediaMetadataRetriever.getFramesAtIndex(0, Math.max(0, totalFrames - SAFE_FRAMES));
+    for (int i = 0; i < totalFrames; i += FRAME_CHUNK_READ_SIZE) {
+      try{
+        frameList.addAll(mediaMetadataRetriever.getFramesAtIndex(
+            i, Math.min(totalFrames - i, FRAME_CHUNK_READ_SIZE)));
+      }catch (IllegalStateException e){
+        Log.d(ContentValues.TAG, "Video chunk read unsuccessful with: "+ e.getMessage());
+        finish();
+      }
 
+    }
     DownloadServerLogs downloadServerLogsTask = new DownloadServerLogs();
     downloadServerLogsTask.execute();
 
