@@ -42,29 +42,30 @@ private val PERMISSIONS_REQUIRED = arrayOf(
  */
 class PermissionsFragment : Fragment() {
 
-    private lateinit var lowestSetting: CameraInfo
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        val cameraManager =
-                requireContext().getSystemService(Context.CAMERA_SERVICE) as CameraManager
-
-        val cameraList = enumerateHighSpeedCameras(cameraManager)
-
-        lowestSetting = findLowestCameraSetting(cameraList)
-
+        
         if (hasPermissions(requireContext())) {
             // If permissions have already been granted, proceed
-            Navigation.findNavController(requireActivity(), R.id.fragment_container).navigate(
-                    PermissionsFragmentDirections.actionPermissionsFragmentToCameraFragment(
-                            lowestSetting.cameraId, lowestSetting.size.width, lowestSetting.size.height, lowestSetting.fps))
+            startCamera()
         } else {
             // Request camera-related permissions
             requestPermissions(PERMISSIONS_REQUIRED, PERMISSIONS_REQUEST_CODE)
         }
     }
 
+    private fun startCamera(){
+        val cameraManager =
+                requireContext().getSystemService(Context.CAMERA_SERVICE) as CameraManager
+
+        val cameraList = enumerateHighSpeedCameras(cameraManager)
+
+        val lowestSetting = findLowestCameraSetting(cameraList)
+
+        Navigation.findNavController(requireActivity(), R.id.fragment_container).navigate(
+                PermissionsFragmentDirections.actionPermissionsFragmentToCameraFragment(
+                        lowestSetting.cameraId, lowestSetting.size.width, lowestSetting.size.height, lowestSetting.fps))
+    }
     /** Selects the lowest camera fps and the lowest image capture resolution available among them.*/
     private fun findLowestCameraSetting(cameraList: List<CameraInfo>): CameraInfo {
         var bestLowestSettingSeen = cameraList.get(0)
@@ -89,8 +90,7 @@ class PermissionsFragment : Fragment() {
         if (requestCode == PERMISSIONS_REQUEST_CODE) {
             if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 // Takes the user to the success fragment when permission is granted
-                Navigation.findNavController(requireActivity(), R.id.fragment_container).navigate(
-                        PermissionsFragmentDirections.actionPermissionsFragmentToCameraFragment(lowestSetting.cameraId, lowestSetting.size.width, lowestSetting.size.height, lowestSetting.fps))
+                startCamera()
             } else {
                 // TODO: Notify server of this failure for granting permissions.
                 Toast.makeText(context, "Permission request denied. You must grant permissions for this app to function. Please restart the app and grant permissions.", Toast.LENGTH_LONG).show()
