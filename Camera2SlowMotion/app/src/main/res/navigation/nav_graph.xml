@@ -24,55 +24,14 @@
         android:id="@+id/permissions_fragment"
         android:name="com.example.android.camera2.slowmo.fragments.PermissionsFragment"
         android:label="Permissions" >
-
         <action
-            android:id="@+id/action_permissions_to_selector"
-            app:destination="@id/selector_fragment"
-            app:popUpTo="@id/permissions_fragment"
-            app:popUpToInclusive="true" />
-
-    </fragment>
-
-    <fragment
-        android:id="@+id/selector_fragment"
-        android:name="com.example.android.camera2.slowmo.fragments.SelectorFragment"
-        android:label="Selector" >
-
-        <action
-            android:id="@+id/action_selector_to_camera"
-            app:launchSingleTop="true"
-            app:destination="@id/camera_fragment" />
-
+          android:id="@+id/action_permissions_fragment_to_camera_fragment"
+          app:destination="@id/camera_fragment" />
     </fragment>
 
     <fragment
         android:id="@+id/camera_fragment"
         android:name="com.example.android.camera2.slowmo.fragments.CameraFragment"
-        android:label="Camera" >
-
-        <argument
-            android:name="camera_id"
-            app:argType="string"
-            app:nullable="false"/>
-
-        <argument
-            android:name="width"
-            app:argType="integer" />
-
-        <argument
-            android:name="height"
-            app:argType="integer" />
-
-        <argument
-            android:name="fps"
-            app:argType="integer" />
-
-        <action
-            android:id="@+id/action_camera_to_permissions"
-            app:destination="@id/permissions_fragment"
-            app:popUpTo="@id/camera_fragment"
-            app:popUpToInclusive="true"/>
-
-    </fragment>
+        android:label="Camera" />
 
 </navigation>

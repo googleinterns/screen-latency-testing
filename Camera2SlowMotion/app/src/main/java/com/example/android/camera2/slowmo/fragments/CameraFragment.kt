@@ -41,7 +41,6 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.navigation.Navigation
-import androidx.navigation.fragment.navArgs
 import com.example.android.camera.utils.*
 import com.example.android.camera2.slowmo.BuildConfig
 import com.example.android.camera2.slowmo.CameraActivity
@@ -63,8 +62,8 @@ import kotlin.coroutines.suspendCoroutine
 
 class CameraFragment : Fragment() {
 
-    /** AndroidX navigation arguments */
-    private val args: CameraFragmentArgs by navArgs()
+    /** Camera setting to use when recording video */
+    private lateinit var cameraSetting: CameraInfo
 
     /** Host's navigation controller */
     private val navController: NavController by lazy {
@@ -79,7 +78,7 @@ class CameraFragment : Fragment() {
 
     /** [CameraCharacteristics] corresponding to the provided Camera ID */
     private val characteristics: CameraCharacteristics by lazy {
-        cameraManager.getCameraCharacteristics(args.cameraId)
+        cameraManager.getCameraCharacteristics(cameraSetting.cameraId)
     }
 
     /** File where the recording will be saved */
@@ -148,7 +147,7 @@ class CameraFragment : Fragment() {
             // Add the preview surface target
             addTarget(viewFinder.holder.surface)
             // High speed capture session requires a target FPS range, even for preview only
-            set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, Range(FPS_PREVIEW_ONLY, args.fps))
+            set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, Range(FPS_PREVIEW_ONLY, cameraSetting.fps))
         }.let {
             // Creates a list of highly optimized capture requests sent to the camera for a high
             // speed video session. Important note: Must use repeating burst request type
@@ -164,7 +163,7 @@ class CameraFragment : Fragment() {
             addTarget(viewFinder.holder.surface)
             addTarget(recorderSurface)
             // Sets user requested FPS for all targets
-            set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, Range(args.fps, args.fps))
+            set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, Range(cameraSetting.fps, cameraSetting.fps))
         }.let {
             // Creates a list of highly optimized capture requests sent to the camera for a high
             // speed video session. Important note: Must use repeating burst request type
@@ -184,6 +183,8 @@ class CameraFragment : Fragment() {
     @SuppressLint("MissingPermission")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        cameraSetting = findLowestCameraSetting(enumerateHighSpeedCameras(cameraManager))
+
         overlay = view.findViewById(R.id.overlay)
         viewFinder = view.findViewById(R.id.view_finder)
 
@@ -224,8 +225,8 @@ class CameraFragment : Fragment() {
         setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
         setOutputFile(outputFile.absolutePath)
         setVideoEncodingBitRate(RECORDER_VIDEO_BITRATE)
-        setVideoFrameRate(args.fps)
-        setVideoSize(args.width, args.height)
+        setVideoFrameRate(cameraSetting.fps)
+        setVideoSize(cameraSetting.size.width, cameraSetting.size.height)
         setVideoEncoder(MediaRecorder.VideoEncoder.H264)
         setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
         setInputSurface(surface)
@@ -261,7 +262,7 @@ class CameraFragment : Fragment() {
             config.getOutputSizes(targetClass) else config.getOutputSizes(format)
 
         // Get a list of potential high speed video sizes for the selected FPS
-        val highSpeedSizes = config.getHighSpeedVideoSizesFor(Range(args.fps, args.fps))
+        val highSpeedSizes = config.getHighSpeedVideoSizesFor(Range(cameraSetting.fps, cameraSetting.fps))
 
         // Filter sizes which are part of the high speed constrained session
         val validSizes = allSizes
@@ -283,7 +284,7 @@ class CameraFragment : Fragment() {
     private fun initializeCamera() = lifecycleScope.launch(Dispatchers.Main) {
 
         // Open the selected camera
-        camera = openCamera(cameraManager, args.cameraId, cameraHandler)
+        camera = openCamera(cameraManager, cameraSetting.cameraId, cameraHandler)
 
         // Creates list of Surfaces where the camera will output frames
         val targets = listOf(viewFinder.holder.surface, recorderSurface)
@@ -292,9 +293,9 @@ class CameraFragment : Fragment() {
         session = createCaptureSession(camera, targets, cameraHandler)
 
         // Ensures the requested size and FPS are compatible with this camera
-        val fpsRange = Range(args.fps, args.fps)
+        val fpsRange = Range(cameraSetting.fps, cameraSetting.fps)
         assert(true == characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
-                ?.getHighSpeedVideoFpsRangesFor(Size(args.width, args.height))?.contains(fpsRange))
+                ?.getHighSpeedVideoFpsRangesFor(Size(cameraSetting.size.width, cameraSetting.size.height))?.contains(fpsRange))
 
         // Sends the capture request as frequently as possible until the session is torn down or
         // session.stopRepeating() is called
@@ -364,7 +365,7 @@ class CameraFragment : Fragment() {
 
                     val authority = "${BuildConfig.APPLICATION_ID}.provider"
                     filePath =  FileProvider.getUriForFile(view.context, authority, outputFile).toString()
-                    fpsRecording = args.fps
+                    fpsRecording = cameraSetting.fps
 
                     // Launch analyser activity via intent
                     val intent = Intent(view.context, AnalyserActivity::class.java)
@@ -453,6 +454,24 @@ class CameraFragment : Fragment() {
         recorderSurface.release()
     }
 
+    /** Selects the lowest camera fps and the lowest image capture resolution available among them.*/
+    private fun findLowestCameraSetting(cameraList: List<CameraInfo>): CameraInfo {
+        var bestLowestSettingSeen = cameraList.get(0)
+        for (setting in cameraList) {
+            if (setting.fps < bestLowestSettingSeen.fps) {
+                bestLowestSettingSeen = setting
+            } else if (setting.fps == bestLowestSettingSeen.fps &&
+                    setting.size.width < bestLowestSettingSeen.size.width) {
+                bestLowestSettingSeen = setting
+            } else if (setting.fps == bestLowestSettingSeen.fps &&
+                    setting.size.width == bestLowestSettingSeen.size.width &&
+                    setting.size.height < bestLowestSettingSeen.size.height) {
+                bestLowestSettingSeen = setting
+            }
+        }
+        return bestLowestSettingSeen
+    }
+
     companion object {
         private val TAG = CameraFragment::class.java.simpleName
         private const val RECORDER_VIDEO_BITRATE: Int = 10000000
@@ -472,6 +491,62 @@ class CameraFragment : Fragment() {
         private fun createFile(context: Context, extension: String): File {
             val sdf = SimpleDateFormat("yyyy_MM_dd_HH_mm_ss_SSS", Locale.US)
             return File(context.filesDir, "VID_${sdf.format(Date())}.$extension")
+        }
+
+        private data class CameraInfo(
+                val title: String,
+                val cameraId: String,
+                val size: Size,
+                val fps: Int)
+
+        /** Converts a lens orientation enum into a human-readable string */
+        private fun lensOrientationString(value: Int) = when (value) {
+            CameraCharacteristics.LENS_FACING_BACK -> "Back"
+            CameraCharacteristics.LENS_FACING_FRONT -> "Front"
+            CameraCharacteristics.LENS_FACING_EXTERNAL -> "External"
+            else -> "Unknown"
+        }
+
+        /** Lists all high speed cameras and supported resolution and FPS combinations */
+        @SuppressLint("InlinedApi")
+        private fun enumerateHighSpeedCameras(cameraManager: CameraManager): List<CameraInfo> {
+            val availableCameras: MutableList<CameraInfo> = mutableListOf()
+
+            // Iterate over the list of cameras and add those with high speed video recording
+            //  capability to our output. This function only returns those cameras that declare
+            //  constrained high speed video recording, but some cameras may be capable of doing
+            //  unconstrained video recording with high enough FPS for some use cases and they will
+            //  not necessarily declare constrained high speed video capability.
+            cameraManager.cameraIdList.forEach { id ->
+                val characteristics = cameraManager.getCameraCharacteristics(id)
+                val orientation = lensOrientationString(
+                        characteristics.get(CameraCharacteristics.LENS_FACING)!!)
+
+                // Query the available capabilities and output formats
+                val capabilities = characteristics.get(
+                        CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES)!!
+                val cameraConfig = characteristics.get(
+                        CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)!!
+
+                // Return cameras that support constrained high video capability
+                if (capabilities.contains(CameraCharacteristics
+                                .REQUEST_AVAILABLE_CAPABILITIES_CONSTRAINED_HIGH_SPEED_VIDEO)) {
+                    // For each camera, list its compatible sizes and FPS ranges
+                    cameraConfig.highSpeedVideoSizes.forEach { size ->
+                        cameraConfig.getHighSpeedVideoFpsRangesFor(size).forEach { fpsRange ->
+                            val fps = fpsRange.upper
+                            val info = CameraInfo(
+                                    "$orientation ($id) $size $fps FPS", id, size, fps)
+
+                            // Only report the highest FPS in the range, avoid duplicates. Select only Back cameras for SLATE.
+                            if (!availableCameras.contains(info) && orientation.equals("Back")) availableCameras.add(info)
+                        }
+                    }
+                }
+
+            }
+
+            return availableCameras
         }
     }
 }
