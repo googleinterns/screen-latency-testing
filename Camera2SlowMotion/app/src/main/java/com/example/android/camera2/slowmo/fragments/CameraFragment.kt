@@ -60,8 +60,8 @@ import kotlin.coroutines.suspendCoroutine
 
 class CameraFragment : Fragment() {
 
-    /** Lowest Camera setting for recording video */
-    private lateinit var lowestSetting: CameraInfo
+    /** Camera setting to use when recording video */
+    private lateinit var cameraSetting: CameraInfo
 
     /** Host's navigation controller */
     private val navController: NavController by lazy {
@@ -76,7 +76,7 @@ class CameraFragment : Fragment() {
 
     /** [CameraCharacteristics] corresponding to the provided Camera ID */
     private val characteristics: CameraCharacteristics by lazy {
-        cameraManager.getCameraCharacteristics(lowestSetting.cameraId)
+        cameraManager.getCameraCharacteristics(cameraSetting.cameraId)
     }
 
     /** File where the recording will be saved */
@@ -145,7 +145,7 @@ class CameraFragment : Fragment() {
             // Add the preview surface target
             addTarget(viewFinder.holder.surface)
             // High speed capture session requires a target FPS range, even for preview only
-            set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, Range(FPS_PREVIEW_ONLY, lowestSetting.fps))
+            set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, Range(FPS_PREVIEW_ONLY, cameraSetting.fps))
         }.let {
             // Creates a list of highly optimized capture requests sent to the camera for a high
             // speed video session. Important note: Must use repeating burst request type
@@ -161,7 +161,7 @@ class CameraFragment : Fragment() {
             addTarget(viewFinder.holder.surface)
             addTarget(recorderSurface)
             // Sets user requested FPS for all targets
-            set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, Range(lowestSetting.fps, lowestSetting.fps))
+            set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, Range(cameraSetting.fps, cameraSetting.fps))
         }.let {
             // Creates a list of highly optimized capture requests sent to the camera for a high
             // speed video session. Important note: Must use repeating burst request type
@@ -181,7 +181,7 @@ class CameraFragment : Fragment() {
     @SuppressLint("MissingPermission")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        lowestSetting = findLowestCameraSetting(enumerateHighSpeedCameras(cameraManager))
+        cameraSetting = findLowestCameraSetting(enumerateHighSpeedCameras(cameraManager))
 
         overlay = view.findViewById(R.id.overlay)
         viewFinder = view.findViewById(R.id.view_finder)
@@ -223,8 +223,8 @@ class CameraFragment : Fragment() {
         setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
         setOutputFile(outputFile.absolutePath)
         setVideoEncodingBitRate(RECORDER_VIDEO_BITRATE)
-        setVideoFrameRate(lowestSetting.fps)
-        setVideoSize(lowestSetting.size.width, lowestSetting.size.height)
+        setVideoFrameRate(cameraSetting.fps)
+        setVideoSize(cameraSetting.size.width, cameraSetting.size.height)
         setVideoEncoder(MediaRecorder.VideoEncoder.H264)
         setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
         setInputSurface(surface)
@@ -260,7 +260,7 @@ class CameraFragment : Fragment() {
             config.getOutputSizes(targetClass) else config.getOutputSizes(format)
 
         // Get a list of potential high speed video sizes for the selected FPS
-        val highSpeedSizes = config.getHighSpeedVideoSizesFor(Range(lowestSetting.fps, lowestSetting.fps))
+        val highSpeedSizes = config.getHighSpeedVideoSizesFor(Range(cameraSetting.fps, cameraSetting.fps))
 
         // Filter sizes which are part of the high speed constrained session
         val validSizes = allSizes
@@ -282,7 +282,7 @@ class CameraFragment : Fragment() {
     private fun initializeCamera() = lifecycleScope.launch(Dispatchers.Main) {
 
         // Open the selected camera
-        camera = openCamera(cameraManager, lowestSetting.cameraId, cameraHandler)
+        camera = openCamera(cameraManager, cameraSetting.cameraId, cameraHandler)
 
         // Creates list of Surfaces where the camera will output frames
         val targets = listOf(viewFinder.holder.surface, recorderSurface)
@@ -291,9 +291,9 @@ class CameraFragment : Fragment() {
         session = createCaptureSession(camera, targets, cameraHandler)
 
         // Ensures the requested size and FPS are compatible with this camera
-        val fpsRange = Range(lowestSetting.fps, lowestSetting.fps)
+        val fpsRange = Range(cameraSetting.fps, cameraSetting.fps)
         assert(true == characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
-                ?.getHighSpeedVideoFpsRangesFor(Size(lowestSetting.size.width, lowestSetting.size.height))?.contains(fpsRange))
+                ?.getHighSpeedVideoFpsRangesFor(Size(cameraSetting.size.width, cameraSetting.size.height))?.contains(fpsRange))
 
         // Sends the capture request as frequently as possible until the session is torn down or
         // session.stopRepeating() is called
@@ -364,7 +364,7 @@ class CameraFragment : Fragment() {
 
                     val authority = "${BuildConfig.APPLICATION_ID}.provider"
                     filePath =  FileProvider.getUriForFile(view.context, authority, outputFile).toString()
-                    fpsRecording = lowestSetting.fps
+                    fpsRecording = cameraSetting.fps
 
                     // Launch analyser activity via intent
                     val intent = Intent(view.context, MainActivity::class.java)
