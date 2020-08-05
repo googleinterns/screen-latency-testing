@@ -115,11 +115,12 @@ public class MainActivity extends AppCompatActivity {
         Integer.valueOf(mediaMetadataRetriever.extractMetadata(METADATA_KEY_VIDEO_FRAME_COUNT));
     // TODO: Add on demand frame read opposed to read all frames.
     for (int i = 0; i < totalFrames; i += FRAME_CHUNK_READ_SIZE) {
-      try{
-        frameList.addAll(mediaMetadataRetriever.getFramesAtIndex(
-            i, Math.min(totalFrames - i, FRAME_CHUNK_READ_SIZE)));
-      }catch (IllegalStateException e){
-        Log.d(ContentValues.TAG, "Video chunk read unsuccessful with: "+ e.getMessage());
+      try {
+        frameList.addAll(
+            mediaMetadataRetriever.getFramesAtIndex(
+                i, Math.min(totalFrames - i, FRAME_CHUNK_READ_SIZE)));
+      } catch (IllegalStateException e) {
+        Log.d(ContentValues.TAG, "Video chunk read unsuccessful with: " + e.getMessage());
         finish();
       }
 

@@ -32,31 +32,6 @@
     <fragment
         android:id="@+id/camera_fragment"
         android:name="com.example.android.camera2.slowmo.fragments.CameraFragment"
-        android:label="Camera" >
-
-        <argument
-            android:name="camera_id"
-            app:argType="string"
-            app:nullable="false"/>
-
-        <argument
-            android:name="width"
-            app:argType="integer" />
-
-        <argument
-            android:name="height"
-            app:argType="integer" />
-
-        <argument
-            android:name="fps"
-            app:argType="integer" />
-
-        <action
-            android:id="@+id/action_camera_to_permissions"
-            app:destination="@id/permissions_fragment"
-            app:popUpTo="@id/camera_fragment"
-            app:popUpToInclusive="true"/>
-
-    </fragment>
+        android:label="Camera" />
 
 </navigation>

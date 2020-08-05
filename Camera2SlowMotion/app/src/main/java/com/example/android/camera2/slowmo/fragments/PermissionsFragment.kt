@@ -47,41 +47,12 @@ class PermissionsFragment : Fragment() {
         
         if (hasPermissions(requireContext())) {
             // If permissions have already been granted, proceed
-            startCamera()
+            Navigation.findNavController(requireActivity(), R.id.fragment_container).navigate(
+                    PermissionsFragmentDirections.actionPermissionsFragmentToCameraFragment())
         } else {
             // Request camera-related permissions
             requestPermissions(PERMISSIONS_REQUIRED, PERMISSIONS_REQUEST_CODE)
         }
-    }
-
-    private fun startCamera(){
-        val cameraManager =
-                requireContext().getSystemService(Context.CAMERA_SERVICE) as CameraManager
-
-        val cameraList = enumerateHighSpeedCameras(cameraManager)
-
-        val lowestSetting = findLowestCameraSetting(cameraList)
-
-        Navigation.findNavController(requireActivity(), R.id.fragment_container).navigate(
-                PermissionsFragmentDirections.actionPermissionsFragmentToCameraFragment(
-                        lowestSetting.cameraId, lowestSetting.size.width, lowestSetting.size.height, lowestSetting.fps))
-    }
-    /** Selects the lowest camera fps and the lowest image capture resolution available among them.*/
-    private fun findLowestCameraSetting(cameraList: List<CameraInfo>): CameraInfo {
-        var bestLowestSettingSeen = cameraList.get(0)
-        for (setting in cameraList) {
-            if (setting.fps < bestLowestSettingSeen.fps) {
-                bestLowestSettingSeen = setting
-            } else if (setting.fps == bestLowestSettingSeen.fps &&
-                    setting.size.width < bestLowestSettingSeen.size.width) {
-                bestLowestSettingSeen = setting
-            } else if (setting.fps == bestLowestSettingSeen.fps &&
-                    setting.size.width == bestLowestSettingSeen.size.width &&
-                    setting.size.height < bestLowestSettingSeen.size.height) {
-                bestLowestSettingSeen = setting
-            }
-        }
-        return bestLowestSettingSeen
     }
 
     override fun onRequestPermissionsResult(
@@ -90,7 +61,8 @@ class PermissionsFragment : Fragment() {
         if (requestCode == PERMISSIONS_REQUEST_CODE) {
             if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 // Takes the user to the success fragment when permission is granted
-                startCamera()
+                Navigation.findNavController(requireActivity(), R.id.fragment_container).navigate(
+                        PermissionsFragmentDirections.actionPermissionsFragmentToCameraFragment())
             } else {
                 // TODO: Notify server of this failure for granting permissions.
                 Toast.makeText(context, "Permission request denied. You must grant permissions for this app to function. Please restart the app and grant permissions.", Toast.LENGTH_LONG).show()
@@ -103,62 +75,6 @@ class PermissionsFragment : Fragment() {
         /** Convenience method used to check if all permissions required by this app are granted */
         fun hasPermissions(context: Context) = PERMISSIONS_REQUIRED.all {
             ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
-        }
-
-        private data class CameraInfo(
-                val title: String,
-                val cameraId: String,
-                val size: Size,
-                val fps: Int)
-
-        /** Converts a lens orientation enum into a human-readable string */
-        private fun lensOrientationString(value: Int) = when (value) {
-            CameraCharacteristics.LENS_FACING_BACK -> "Back"
-            CameraCharacteristics.LENS_FACING_FRONT -> "Front"
-            CameraCharacteristics.LENS_FACING_EXTERNAL -> "External"
-            else -> "Unknown"
-        }
-
-        /** Lists all high speed cameras and supported resolution and FPS combinations */
-        @SuppressLint("InlinedApi")
-        private fun enumerateHighSpeedCameras(cameraManager: CameraManager): List<CameraInfo> {
-            val availableCameras: MutableList<CameraInfo> = mutableListOf()
-
-            // Iterate over the list of cameras and add those with high speed video recording
-            //  capability to our output. This function only returns those cameras that declare
-            //  constrained high speed video recording, but some cameras may be capable of doing
-            //  unconstrained video recording with high enough FPS for some use cases and they will
-            //  not necessarily declare constrained high speed video capability.
-            cameraManager.cameraIdList.forEach { id ->
-                val characteristics = cameraManager.getCameraCharacteristics(id)
-                val orientation = lensOrientationString(
-                        characteristics.get(CameraCharacteristics.LENS_FACING)!!)
-
-                // Query the available capabilities and output formats
-                val capabilities = characteristics.get(
-                        CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES)!!
-                val cameraConfig = characteristics.get(
-                        CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)!!
-
-                // Return cameras that support constrained high video capability
-                if (capabilities.contains(CameraCharacteristics
-                                .REQUEST_AVAILABLE_CAPABILITIES_CONSTRAINED_HIGH_SPEED_VIDEO)) {
-                    // For each camera, list its compatible sizes and FPS ranges
-                    cameraConfig.highSpeedVideoSizes.forEach { size ->
-                        cameraConfig.getHighSpeedVideoFpsRangesFor(size).forEach { fpsRange ->
-                            val fps = fpsRange.upper
-                            val info = CameraInfo(
-                                    "$orientation ($id) $size $fps FPS", id, size, fps)
-
-                            // Only report the highest FPS in the range, avoid duplicates
-                            if (!availableCameras.contains(info)) availableCameras.add(info)
-                        }
-                    }
-                }
-
-            }
-
-            return availableCameras
         }
     }
 }
