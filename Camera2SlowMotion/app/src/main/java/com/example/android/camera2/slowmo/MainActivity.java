@@ -120,6 +120,7 @@ public class MainActivity extends AppCompatActivity {
             i, Math.min(totalFrames - i, FRAME_CHUNK_READ_SIZE)));
       }catch (IllegalStateException e){
         Log.d(ContentValues.TAG, "Video chunk read unsuccessful with: "+ e.getMessage());
+        finish();
       }
 
     }
