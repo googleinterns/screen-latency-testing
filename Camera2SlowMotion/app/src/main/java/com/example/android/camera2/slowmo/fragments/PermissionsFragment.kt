@@ -35,11 +35,14 @@ private val PERMISSIONS_REQUIRED = arrayOf(
         Manifest.permission.CAMERA,
         Manifest.permission.RECORD_AUDIO)
 
+// TODO: Change fragment name in refactor commit. Waiting for merge of CameraActivity and AnalyserActivity.
 /**
  * This [Fragment] requests permissions and, once granted, it will navigate to the next fragment
  * with the lowest camera settings available.
  */
-class PermissionsAndCameraSettingFragment : Fragment() {
+class PermissionsFragment : Fragment() {
+
+    private lateinit var lowestSetting: CameraInfo
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -54,8 +57,8 @@ class PermissionsAndCameraSettingFragment : Fragment() {
         if (hasPermissions(requireContext())) {
             // If permissions have already been granted, proceed
             Navigation.findNavController(requireActivity(), R.id.fragment_container).navigate(
-                    PermissionsFragmentDirections.actionPermissionsFragmentToCameraFragment2(
-                    lowestSetting.cameraId, lowestSetting.size.width, lowestSetting.size.height, lowestSetting.fps))
+                    PermissionsFragmentDirections.actionPermissionsFragmentToCameraFragment(
+                            lowestSetting.cameraId, lowestSetting.size.width, lowestSetting.size.height, lowestSetting.fps))
         } else {
             // Request camera-related permissions
             requestPermissions(PERMISSIONS_REQUIRED, PERMISSIONS_REQUEST_CODE)
@@ -66,9 +69,14 @@ class PermissionsAndCameraSettingFragment : Fragment() {
     private fun findLowestCameraSetting(cameraList: List<CameraInfo>): CameraInfo {
         var bestLowestSettingSeen = cameraList.get(0)
         for (setting in cameraList) {
-            if (setting.fps <= bestLowestSettingSeen.fps &&
-                    setting.size.width <= bestLowestSettingSeen.size.width &&
-                    setting.size.height <= bestLowestSettingSeen.size.height) {
+            if (setting.fps < bestLowestSettingSeen.fps) {
+                bestLowestSettingSeen = setting
+            } else if (setting.fps == bestLowestSettingSeen.fps &&
+                    setting.size.width < bestLowestSettingSeen.size.width) {
+                bestLowestSettingSeen = setting
+            } else if (setting.fps == bestLowestSettingSeen.fps &&
+                    setting.size.width == bestLowestSettingSeen.size.width &&
+                    setting.size.height < bestLowestSettingSeen.size.height) {
                 bestLowestSettingSeen = setting
             }
         }
@@ -82,9 +90,10 @@ class PermissionsAndCameraSettingFragment : Fragment() {
             if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 // Takes the user to the success fragment when permission is granted
                 Navigation.findNavController(requireActivity(), R.id.fragment_container).navigate(
-                        PermissionsFragmentDirections.actionPermissionsFragmentToCameraFragment2(lowestSetting.cameraId, lowestSetting.size.width, lowestSetting.size.height, lowestSetting.fps))
+                        PermissionsFragmentDirections.actionPermissionsFragmentToCameraFragment(lowestSetting.cameraId, lowestSetting.size.width, lowestSetting.size.height, lowestSetting.fps))
             } else {
-                Toast.makeText(context, "Permission request denied", Toast.LENGTH_LONG).show()
+                // TODO: Notify server of this failure for granting permissions.
+                Toast.makeText(context, "Permission request denied. You must grant permissions for this app to function. Please restart the app and grant permissions.", Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -95,8 +104,6 @@ class PermissionsAndCameraSettingFragment : Fragment() {
         fun hasPermissions(context: Context) = PERMISSIONS_REQUIRED.all {
             ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
         }
-
-        private lateinit var lowestSetting: CameraInfo
 
         private data class CameraInfo(
                 val title: String,

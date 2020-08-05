@@ -22,7 +22,7 @@
 
     <fragment
         android:id="@+id/permissions_fragment"
-        android:name="com.example.android.camera2.slowmo.fragments.PermissionsAndCameraSettingFragment"
+        android:name="com.example.android.camera2.slowmo.fragments.PermissionsFragment"
         android:label="Permissions" >
         <action
           android:id="@+id/action_permissions_fragment_to_camera_fragment"
