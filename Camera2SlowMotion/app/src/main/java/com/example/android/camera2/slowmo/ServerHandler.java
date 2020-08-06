@@ -9,19 +9,22 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.concurrent.ExecutionException;
+import org.jetbrains.annotations.NotNull;
 
 /** Handles every interaction of app with the server. */
 public class ServerHandler {
 
   private Integer serverSocketPort;
-  private final String SERVER_IP = "127.0.0.1";
-  private ArrayList<Long> serverTimestamps = new ArrayList<>();
   private long serverStartTimestamp;
-  private ConnectionThread connectionThread;
   private Socket socket;
   private BufferedReader inputReader;
   private PrintWriter outputWriter;
   private long hostSyncTimestamp;
+
+  public ServerHandler(Integer serverSocketPort) {
+    this.serverSocketPort = serverSocketPort;
+  }
 
   public long getHostSyncTimestamp() {
     return hostSyncTimestamp;
@@ -35,16 +38,12 @@ public class ServerHandler {
     this.serverSocketPort = serverSocketPort;
   }
 
-  public ArrayList<Long> getServerTimestamps() {
-    return serverTimestamps;
-  }
-
   public long getServerStartTimestamp() {
     return serverStartTimestamp;
   }
 
   public void startConnection() {
-    connectionThread = new ConnectionThread();
+    ConnectionThread connectionThread = new ConnectionThread();
     connectionThread.execute();
   }
 
@@ -54,6 +53,11 @@ public class ServerHandler {
     outputWriter.flush();
   }
 
+  @NotNull
+  public long getSyncOffset() {
+    return serverStartTimestamp - hostSyncTimestamp;
+  }
+
   /** Creates a socket for communication with the server. Sets reader and writer for server
    * connection. */
   private class ConnectionThread extends AsyncTask<Void, Void, Void> {
@@ -61,6 +65,7 @@ public class ServerHandler {
     @Override
     protected Void doInBackground(Void... voids) {
       try {
+        String SERVER_IP = "127.0.0.1";
         socket = new Socket(SERVER_IP, serverSocketPort);
         outputWriter = new PrintWriter(socket.getOutputStream());
         inputReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -72,31 +77,37 @@ public class ServerHandler {
     }
   }
 
-  public void downloadServerTimeStamps() {
-    if (serverSocketPort == null) {
-      Log.d(ContentValues.TAG, "Can't find server to download timestamps. No port bound.");
-      return;
+  public ArrayList<Long> downloadServerTimeStamps() {
+    if (serverSocketPort == null || !socket.isConnected()) {
+      Log.d(ContentValues.TAG, "Can't find server to download timestamps. No port bound or connection is dead.");
+      return null;
     }
     DownloadServerLogs downloadServerLogsTask = new DownloadServerLogs();
-    downloadServerLogsTask.execute();
+    try {
+      return downloadServerLogsTask.execute().get();
+    } catch (ExecutionException | InterruptedException e) {
+      e.printStackTrace();
+    }
+    return null;
   }
 
   /** Requests the server to send the timestamps of key-presses. */
-  private class DownloadServerLogs extends AsyncTask<Void, Void, Void> {
+  private class DownloadServerLogs extends AsyncTask<Void, Void, ArrayList<Long>> {
     @Override
-    protected Void doInBackground(Void... values) {
+    protected ArrayList<Long> doInBackground(Void... values) {
       if (serverSocketPort == null) {
         Log.d(
             ContentValues.TAG,
             "No server to read input from. Check if server communication is working.");
       }
+      ArrayList<Long> serverTimestamps = new ArrayList<>();
       try {
         Log.d(ContentValues.TAG, "Sending request to download timestamps");
         outputWriter.write("send timestamps" + "*");
         outputWriter.flush();
         Log.d(ContentValues.TAG, "Request sent to server. Waiting to receive timestamps..");
         String message = inputReader.readLine();
-        serverStartTimestamp = Long.valueOf(message);
+        serverStartTimestamp = Long.parseLong(message);
 
         while (message != null) {
           serverTimestamps.add(Long.valueOf(message));
@@ -107,7 +118,7 @@ public class ServerHandler {
       } catch (IOException e) {
         Log.d(ContentValues.TAG, "Server TimeStamp read failed");
       }
-      return null;
+      return serverTimestamps;
     }
   }
 }

@@ -23,12 +23,13 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.FrameLayout
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 
 class CameraActivity : AppCompatActivity() {
 
     private lateinit var container: FrameLayout
-    internal val serverHandler = ServerHandler()
+    internal lateinit var serverHandler: ServerHandler
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,7 +39,8 @@ class CameraActivity : AppCompatActivity() {
         val bundle = intent!!.extras
         val laptopPort = bundle?.getString("port")?.toInt() ?: 0
         if (laptopPort != 0) {
-            serverHandler.serverSocketPort = laptopPort
+            serverHandler = ServerHandler(laptopPort)
+            // TODO: Add retry or app fail if no connection established
             serverHandler.startConnection()
         } else {
             Log.d(ContentValues.TAG, "No port information received form server. Unable to establish connection.")
@@ -54,17 +56,20 @@ class CameraActivity : AppCompatActivity() {
         }, IMMERSIVE_FLAG_TIMEOUT)
     }
 
-    internal fun analyse(fileUri: Uri){
+    @RequiresApi(Build.VERSION_CODES.P)
+    internal fun analyze(fileUri: Uri) {
         val videoProcessor = VideoProcessor()
-        val lagCalculator = LagCalculator(videoProcessor, serverHandler)
+        val lagCalculator = LagCalculator()
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            videoProcessor.createVideoReader(applicationContext, fileUri)
-        };
+        if (!videoProcessor.createVideoReader(applicationContext, fileUri)) {
+            finish()
+        }
 
-        serverHandler.downloadServerTimeStamps()
+        val serverTimestamps = serverHandler.downloadServerTimeStamps()
 
-        videoProcessor.doOcr(lagCalculator)
+        val resultsOcr = videoProcessor.doOcr()
+
+        lagCalculator.calculateLag(serverTimestamps, videoProcessor.videoFrameTimestamp, resultsOcr, serverHandler.getSyncOffset())
     }
 
     companion object {

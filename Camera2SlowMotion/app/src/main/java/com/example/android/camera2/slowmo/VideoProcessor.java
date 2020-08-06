@@ -10,18 +10,18 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build.VERSION_CODES;
 import android.util.Log;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import com.example.android.camera2.slowmo.fragments.CameraFragment;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import com.google.mlkit.vision.common.InputImage;
 import com.google.mlkit.vision.text.Text;
 import com.google.mlkit.vision.text.TextRecognition;
 import com.google.mlkit.vision.text.TextRecognizer;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Loads recorded video file into media-reader, attach timestamps to individual video frames and
@@ -30,42 +30,38 @@ import java.util.List;
  */
 public class VideoProcessor {
 
-  private static final int SAFE_FRAMES = 10;
-  private MediaMetadataRetriever mediaMetadataRetriever;
-  private int totalFrames = 0;
-  private List<Bitmap> frameList;
+  private static final int FRAME_CHUNK_READ_SIZE = 100;
+  private List<Bitmap> frameList = new ArrayList<>();
   private TextRecognizer recognizer;
   private ArrayList<Long> videoFrameTimestamp = new ArrayList<>();
-
-  public long getRecordStartTime() {
-    return recordStartTime;
-  }
-
-  public ArrayList<Long> getVideoFrameTimestamp() {
-    return videoFrameTimestamp;
-  }
-
   private long recordStartTime = CameraFragment.Companion.getRecordingStartMillis();
   private long frameDuration = 1000L / CameraFragment.Companion.getFpsRecording();
   private long framesProcessed = 0;
-  private ArrayList<String> resultsOCR = new ArrayList<>();
 
-  public ArrayList<String> getResultsOCR() {
-    return resultsOCR;
-  }
+  public ArrayList<Long> getVideoFrameTimestamp() { return videoFrameTimestamp; }
 
   /** Sets media-reader and loads available video frames. SAFE_FRAMES trims potential corrupted
    * frames from the end.*/
   @RequiresApi(api = VERSION_CODES.P)
-  public void createVideoReader(Context applicationContext, Uri fileUri) {
+  public boolean createVideoReader(Context applicationContext, Uri fileUri) {
     recognizer = TextRecognition.getClient();
-    mediaMetadataRetriever = new MediaMetadataRetriever();
+    MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
     mediaMetadataRetriever.setDataSource(applicationContext, fileUri);
-    totalFrames = Integer.valueOf(mediaMetadataRetriever.extractMetadata(METADATA_KEY_VIDEO_FRAME_COUNT));
+    int totalFrames = Integer
+        .parseInt(mediaMetadataRetriever.extractMetadata(METADATA_KEY_VIDEO_FRAME_COUNT));
 
     // TODO: Add on demand frame read opposed to read all frames.
-    // TODO: Number of frames that can be loaded together seems to be capped by application. Behaviour occur only on some specific chosen resolutions.
-    frameList = mediaMetadataRetriever.getFramesAtIndex(0, Math.max(0, totalFrames - SAFE_FRAMES));
+    for (int i = 0; i < totalFrames; i += FRAME_CHUNK_READ_SIZE) {
+      try {
+        frameList.addAll(
+            mediaMetadataRetriever.getFramesAtIndex(
+                i, Math.min(totalFrames - i, FRAME_CHUNK_READ_SIZE)));
+      } catch (IllegalStateException e) {
+        Log.d(ContentValues.TAG, "Video chunk read unsuccessful with: " + e.getMessage());
+        return false;
+      }
+    }
+    return true;
   }
 
   /** Convenience method used to assign frame timestamps to individual frames based on video
@@ -74,20 +70,28 @@ public class VideoProcessor {
     videoFrameTimestamp.add(recordStartTime + (framesProcessed * frameDuration));
   }
 
-  public void doOcr(LagCalculator lagCalculator) {
+  public ArrayList<String> doOcr() {
     AnalyseVideo ocrOnVideoTask = new AnalyseVideo();
-    ocrOnVideoTask.execute(lagCalculator);
+    try {
+      return ocrOnVideoTask.execute().get();
+    } catch (ExecutionException | InterruptedException e) {
+      e.printStackTrace();
+      return null;
+    }
   }
 
   /** Iterates on video frames issuing an Ocr request. Requests video-frame timestamp assignment.
    * Calls LagCalculator upon Ocr completion of all video frame.*/
-  private class AnalyseVideo extends AsyncTask<LagCalculator, Void, Void> {
+  private class AnalyseVideo extends AsyncTask<Void, Void, ArrayList<String>> {
+
     @Override
-    protected Void doInBackground(LagCalculator... lagCalculators) {
+    protected ArrayList<String> doInBackground(Void ...values) {
+      ArrayList<String> resultsOCR = new ArrayList<>();
+      Collection<Task<Text>> ocrTasks = new ArrayList<>();
       for (int i = 0; i < frameList.size(); i++) {
         InputImage imageHolder = InputImage.fromBitmap(frameList.get(i), 0);
         final int finalI = i;
-        Task<Text> result =
+        ocrTasks.add(
             recognizer
                 .process(imageHolder)
                 .addOnSuccessListener(
@@ -98,14 +102,18 @@ public class VideoProcessor {
                           "Text detected at index:" + finalI + " " + visionText.getText());
                       setNextFrameTimeStamp();
                       framesProcessed++;
-                      if (framesProcessed == frameList.size()) {
-                        lagCalculators[0].calculateLag();
-                      }
                     })
                 .addOnFailureListener(
-                    e -> Log.d(ContentValues.TAG, "Analyse failed with: " + e.getMessage()));
+                    e -> Log.d(ContentValues.TAG, "Analyse failed with: " + e.getMessage())));
       }
-      return null;
+      Task finalTask = Tasks.whenAllComplete(ocrTasks);
+      try {
+        Tasks.await(finalTask);
+        return resultsOCR;
+      } catch (InterruptedException | ExecutionException e) {
+        e.printStackTrace();
+        return null;
+      }
     }
   }
 }
