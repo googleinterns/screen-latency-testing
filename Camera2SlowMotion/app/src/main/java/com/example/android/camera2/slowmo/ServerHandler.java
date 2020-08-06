@@ -15,16 +15,16 @@ public class ServerHandler {
 
   private Integer serverSocketPort;
   private final String SERVER_IP = "127.0.0.1";
-  private ArrayList<Long> serverTimeStamps = new ArrayList<>();
-  private Long serverStartTimeStamp;
+  private ArrayList<Long> serverTimestamps = new ArrayList<>();
+  private long serverStartTimestamp;
   private ConnectionThread connectionThread;
   private Socket socket;
   private BufferedReader inputReader;
   private PrintWriter outputWriter;
-  private Long hostSyncTimeStamp;
+  private long hostSyncTimestamp;
 
-  public Long getHostSyncTimeStamp() {
-    return hostSyncTimeStamp;
+  public long getHostSyncTimestamp() {
+    return hostSyncTimestamp;
   }
 
   public Integer getServerSocketPort() {
@@ -35,12 +35,12 @@ public class ServerHandler {
     this.serverSocketPort = serverSocketPort;
   }
 
-  public ArrayList<Long> getServerTimeStamps() {
-    return serverTimeStamps;
+  public ArrayList<Long> getServerTimestamps() {
+    return serverTimestamps;
   }
 
-  public Long getServerStartTimeStamp() {
-    return serverStartTimeStamp;
+  public long getServerStartTimestamp() {
+    return serverStartTimestamp;
   }
 
   public void startConnection() {
@@ -49,7 +49,7 @@ public class ServerHandler {
   }
 
   public void sendKeySimulationSignal() {
-    hostSyncTimeStamp = System.currentTimeMillis();
+    hostSyncTimestamp = System.currentTimeMillis();
     outputWriter.write("started capture*");
     outputWriter.flush();
   }
@@ -96,10 +96,10 @@ public class ServerHandler {
         outputWriter.flush();
         Log.d(ContentValues.TAG, "Request sent to server. Waiting to receive timestamps..");
         String message = inputReader.readLine();
-        serverStartTimeStamp = Long.valueOf(message);
+        serverStartTimestamp = Long.valueOf(message);
 
         while (message != null) {
-          serverTimeStamps.add(Long.valueOf(message));
+          serverTimestamps.add(Long.valueOf(message));
           Log.d(ContentValues.TAG, "Server TimeStamp:" + message);
           message = inputReader.readLine();
         }

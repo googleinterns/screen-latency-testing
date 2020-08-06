@@ -368,6 +368,7 @@ class CameraFragment : Fragment() {
                     // Finishes our current camera screen
                     delay(CameraActivity.ANIMATION_SLOW_MILLIS)
 
+                    // starts lifecycle of lag calculation
                     (activity as CameraActivity).analyse(fileUri)
 
                     navController.popBackStack()

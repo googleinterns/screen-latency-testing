@@ -30,14 +30,14 @@ import java.util.List;
  */
 public class VideoProcessor {
 
-  private static final Integer SAFE_FRAMES = 10;
+  private static final int SAFE_FRAMES = 10;
   private MediaMetadataRetriever mediaMetadataRetriever;
-  private Integer totalFrames = 0;
+  private int totalFrames = 0;
   private List<Bitmap> frameList;
   private TextRecognizer recognizer;
   private ArrayList<Long> videoFrameTimestamp = new ArrayList<>();
 
-  public Long getRecordStartTime() {
+  public long getRecordStartTime() {
     return recordStartTime;
   }
 
@@ -45,9 +45,9 @@ public class VideoProcessor {
     return videoFrameTimestamp;
   }
 
-  private Long recordStartTime = CameraFragment.Companion.getRecordingStartMillis();
-  private Long frameDuration = 1000L / CameraFragment.Companion.getFpsRecording();
-  private Integer framesProcessed = 0;
+  private long recordStartTime = CameraFragment.Companion.getRecordingStartMillis();
+  private long frameDuration = 1000L / CameraFragment.Companion.getFpsRecording();
+  private long framesProcessed = 0;
   private ArrayList<String> resultsOCR = new ArrayList<>();
 
   public ArrayList<String> getResultsOCR() {
@@ -57,7 +57,7 @@ public class VideoProcessor {
   /** Sets media-reader and loads available video frames. SAFE_FRAMES trims potential corrupted
    * frames from the end.*/
   @RequiresApi(api = VERSION_CODES.P)
-  public void setVideoReader(Context applicationContext, Uri fileUri) {
+  public void createVideoReader(Context applicationContext, Uri fileUri) {
     recognizer = TextRecognition.getClient();
     mediaMetadataRetriever = new MediaMetadataRetriever();
     mediaMetadataRetriever.setDataSource(applicationContext, fileUri);
@@ -74,7 +74,7 @@ public class VideoProcessor {
     videoFrameTimestamp.add(recordStartTime + (framesProcessed * frameDuration));
   }
 
-  public void doOcrOnVideo(LagCalculator lagCalculator) {
+  public void doOcr(LagCalculator lagCalculator) {
     AnalyseVideo ocrOnVideoTask = new AnalyseVideo();
     ocrOnVideoTask.execute(lagCalculator);
   }
@@ -91,27 +91,19 @@ public class VideoProcessor {
             recognizer
                 .process(imageHolder)
                 .addOnSuccessListener(
-                    new OnSuccessListener<Text>() {
-                      @Override
-                      public void onSuccess(Text visionText) {
-                        resultsOCR.add(visionText.getText());
-                        Log.d(
-                            ContentValues.TAG,
-                            "Text detected at index:" + finalI + " " + visionText.getText());
-                        setNextFrameTimeStamp();
-                        framesProcessed++;
-                        if (framesProcessed == frameList.size()) {
-                          lagCalculators[0].calculateLag();
-                        }
+                    visionText -> {
+                      resultsOCR.add(visionText.getText());
+                      Log.d(
+                          ContentValues.TAG,
+                          "Text detected at index:" + finalI + " " + visionText.getText());
+                      setNextFrameTimeStamp();
+                      framesProcessed++;
+                      if (framesProcessed == frameList.size()) {
+                        lagCalculators[0].calculateLag();
                       }
                     })
                 .addOnFailureListener(
-                    new OnFailureListener() {
-                      @Override
-                      public void onFailure(@NonNull Exception e) {
-                        Log.d(ContentValues.TAG, "Analyse failed with: " + e.getMessage());
-                      }
-                    });
+                    e -> Log.d(ContentValues.TAG, "Analyse failed with: " + e.getMessage()));
       }
       return null;
     }

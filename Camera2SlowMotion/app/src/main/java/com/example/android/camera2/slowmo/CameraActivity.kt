@@ -59,12 +59,12 @@ class CameraActivity : AppCompatActivity() {
         val lagCalculator = LagCalculator(videoProcessor, serverHandler)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            videoProcessor.setVideoReader(applicationContext, fileUri)
+            videoProcessor.createVideoReader(applicationContext, fileUri)
         };
 
         serverHandler.downloadServerTimeStamps()
 
-        videoProcessor.doOcrOnVideo(lagCalculator)
+        videoProcessor.doOcr(lagCalculator)
     }
 
     companion object {
