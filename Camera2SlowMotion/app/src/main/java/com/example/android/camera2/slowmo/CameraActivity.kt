@@ -17,6 +17,8 @@
 package com.example.android.camera2.slowmo
 
 import android.content.ContentValues
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -26,15 +28,15 @@ import androidx.appcompat.app.AppCompatActivity
 class CameraActivity : AppCompatActivity() {
 
     private lateinit var container: FrameLayout
+    internal val serverHandler = ServerHandler()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_camera)
         container = findViewById(R.id.fragment_container)
 
-        serverHandler = ServerHandler()
         val bundle = intent!!.extras
-        laptopPort = bundle?.getString("port")?.toInt() ?: 0
+        val laptopPort = bundle?.getString("port")?.toInt() ?: 0
         if (laptopPort != 0) {
             serverHandler.serverSocketPort = laptopPort
             serverHandler.startConnection()
@@ -52,6 +54,19 @@ class CameraActivity : AppCompatActivity() {
         }, IMMERSIVE_FLAG_TIMEOUT)
     }
 
+    internal fun analyse(fileUri: Uri){
+        val videoProcessor = VideoProcessor()
+        val lagCalculator = LagCalculator(videoProcessor, serverHandler)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            videoProcessor.setVideoReader(applicationContext, fileUri)
+        };
+
+        serverHandler.downloadServerTimeStamps()
+
+        videoProcessor.doOcrOnVideo(lagCalculator)
+    }
+
     companion object {
         /** Combination of all flags required to put activity into immersive mode */
         const val FLAGS_FULLSCREEN =
@@ -64,7 +79,5 @@ class CameraActivity : AppCompatActivity() {
         const val ANIMATION_FAST_MILLIS = 50L
         const val ANIMATION_SLOW_MILLIS = 100L
         private const val IMMERSIVE_FLAG_TIMEOUT = 500L
-        private var laptopPort: Int = 0
-        lateinit var serverHandler: ServerHandler
     }
 }

@@ -18,7 +18,6 @@ package com.example.android.camera2.slowmo.fragments
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.graphics.Color
 import android.hardware.camera2.*
@@ -26,6 +25,7 @@ import android.hardware.camera2.params.StreamConfigurationMap
 import android.media.MediaCodec
 import android.media.MediaRecorder
 import android.media.MediaScannerConnection
+import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.HandlerThread
@@ -33,7 +33,6 @@ import android.util.Log
 import android.util.Range
 import android.util.Size
 import android.view.*
-import androidx.annotation.NonNull
 import androidx.core.content.FileProvider
 import androidx.core.graphics.drawable.toDrawable
 import androidx.fragment.app.Fragment
@@ -44,7 +43,6 @@ import androidx.navigation.Navigation
 import com.example.android.camera.utils.*
 import com.example.android.camera2.slowmo.BuildConfig
 import com.example.android.camera2.slowmo.CameraActivity
-import com.example.android.camera2.slowmo.AnalyserActivity
 import com.example.android.camera2.slowmo.R
 import kotlinx.android.synthetic.main.fragment_camera.*
 import kotlinx.coroutines.Dispatchers
@@ -289,6 +287,8 @@ class CameraFragment : Fragment() {
         // Creates list of Surfaces where the camera will output frames
         val targets = listOf(viewFinder.holder.surface, recorderSurface)
 
+        val serverHandler = (activity as CameraActivity).serverHandler
+
         // Start a capture session using our open camera and list of Surfaces where frames will go
         session = createCaptureSession(camera, targets, cameraHandler)
 
@@ -329,9 +329,7 @@ class CameraFragment : Fragment() {
                     overlay.post(animationTask)
                     try {
                         Timer().schedule(CAMERA_START_DELAY){
-                            CameraActivity.serverHandler.hostSyncTimeStamp = System.currentTimeMillis()
-                            CameraActivity.serverHandler.outputWriter.write("started capture*")
-                            CameraActivity.serverHandler.outputWriter.flush()
+                            serverHandler.sendKeySimulationSignal()
                         }
                     } catch (exc: Exception) {
                         Log.d(TAG, "Failed to send Start Capture signal")
@@ -364,15 +362,14 @@ class CameraFragment : Fragment() {
                             view.context, arrayOf(outputFile.absolutePath), null, null)
 
                     val authority = "${BuildConfig.APPLICATION_ID}.provider"
-                    filePath =  FileProvider.getUriForFile(view.context, authority, outputFile).toString()
+                    fileUri =  FileProvider.getUriForFile(view.context, authority, outputFile)
                     fpsRecording = cameraSetting.fps
-
-                    // Launch analyser activity via intent
-                    val intent = Intent(view.context, AnalyserActivity::class.java)
-                    startActivity(intent)
 
                     // Finishes our current camera screen
                     delay(CameraActivity.ANIMATION_SLOW_MILLIS)
+
+                    (activity as CameraActivity).analyse(fileUri)
+
                     navController.popBackStack()
                 }
             }
@@ -477,7 +474,7 @@ class CameraFragment : Fragment() {
         private const val RECORDER_VIDEO_BITRATE: Int = 10000000
         private const val MIN_REQUIRED_RECORDING_TIME_MILLIS: Long = 1000L
         private const val CAMERA_START_DELAY = 550L
-        lateinit var filePath:String
+        lateinit var fileUri:Uri
         var fpsRecording:Int = 0
         var recordingStartMillis: Long = 0L
 

@@ -44,10 +44,6 @@
             </intent-filter>
 
         </activity>
-        <activity
-            android:name="com.example.android.camera2.slowmo.AnalyserActivity"
-            android:theme="@style/AppTheme">
-        </activity>
 
         <!-- FileProvider used to share media with other apps -->
         <provider

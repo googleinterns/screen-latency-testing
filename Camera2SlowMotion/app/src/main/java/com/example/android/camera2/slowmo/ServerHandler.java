@@ -19,16 +19,12 @@ public class ServerHandler {
   private Long serverStartTimeStamp;
   private ConnectionThread connectionThread;
   private Socket socket;
-  public BufferedReader inputReader;
-  public PrintWriter outputWriter;
+  private BufferedReader inputReader;
+  private PrintWriter outputWriter;
   private Long hostSyncTimeStamp;
 
   public Long getHostSyncTimeStamp() {
     return hostSyncTimeStamp;
-  }
-
-  public void setHostSyncTimeStamp(Long hostSyncTimeStamp) {
-    this.hostSyncTimeStamp = hostSyncTimeStamp;
   }
 
   public Integer getServerSocketPort() {
@@ -50,6 +46,12 @@ public class ServerHandler {
   public void startConnection() {
     connectionThread = new ConnectionThread();
     connectionThread.execute();
+  }
+
+  public void sendKeySimulationSignal() {
+    hostSyncTimeStamp = System.currentTimeMillis();
+    outputWriter.write("started capture*");
+    outputWriter.flush();
   }
 
   /** Creates a socket for communication with the server. Sets reader and writer for server

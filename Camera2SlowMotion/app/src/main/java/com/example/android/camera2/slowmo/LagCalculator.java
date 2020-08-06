@@ -40,6 +40,7 @@ public class LagCalculator {
         if (serverSequence.equals(resultsOCR.get(i))) {
           long lag = videoFrameTimestamp.get(i) - serverTimestamp.get(j) + serverHostSyncOffset;
           lagResult.add(lag);
+          Log.d("Lag:", String.valueOf(lag));
           break;
         }
       }
