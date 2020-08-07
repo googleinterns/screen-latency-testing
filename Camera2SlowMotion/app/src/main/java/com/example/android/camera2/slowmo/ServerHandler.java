@@ -47,13 +47,13 @@ public class ServerHandler {
     connectionThread.execute();
   }
 
+  // TODO: Use round-trip averaging to fix hostSyncTimestamp
   public void sendKeySimulationSignal() {
     hostSyncTimestamp = System.currentTimeMillis();
     outputWriter.write("started capture*");
     outputWriter.flush();
   }
 
-  @NotNull
   public long getSyncOffset() {
     return serverStartTimestamp - hostSyncTimestamp;
   }
@@ -91,6 +91,7 @@ public class ServerHandler {
     return null;
   }
 
+  //TODO: Replace AsyncTask with something more robust
   /** Requests the server to send the timestamps of key-presses. */
   private class DownloadServerLogs extends AsyncTask<Void, Void, ArrayList<Long>> {
     @Override

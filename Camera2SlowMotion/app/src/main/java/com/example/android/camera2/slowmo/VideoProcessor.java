@@ -19,6 +19,7 @@ import com.google.mlkit.vision.text.Text;
 import com.google.mlkit.vision.text.TextRecognition;
 import com.google.mlkit.vision.text.TextRecognizer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -32,19 +33,18 @@ public class VideoProcessor {
 
   private static final int FRAME_CHUNK_READ_SIZE = 100;
   private List<Bitmap> frameList = new ArrayList<>();
-  private TextRecognizer recognizer;
-  private ArrayList<Long> videoFrameTimestamp = new ArrayList<>();
-  private long recordStartTime = CameraFragment.Companion.getRecordingStartMillis();
-  private long frameDuration = 1000L / CameraFragment.Companion.getFpsRecording();
-  private long framesProcessed = 0;
+  private ArrayList<Long> videoFramesTimestamp;
 
-  public ArrayList<Long> getVideoFrameTimestamp() { return videoFrameTimestamp; }
+  public ArrayList<Long> getVideoFramesTimestamp() {
+    return videoFramesTimestamp;
+  }
 
-  /** Sets media-reader and loads available video frames. SAFE_FRAMES trims potential corrupted
-   * frames from the end.*/
+  /**
+   * Sets media-reader and loads available video frames. SAFE_FRAMES trims potential corrupted
+   * frames from the end.
+   */
   @RequiresApi(api = VERSION_CODES.P)
   public boolean createVideoReader(Context applicationContext, Uri fileUri) {
-    recognizer = TextRecognition.getClient();
     MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
     mediaMetadataRetriever.setDataSource(applicationContext, fileUri);
     int totalFrames = Integer
@@ -61,16 +61,25 @@ public class VideoProcessor {
         return false;
       }
     }
+    videoFramesTimestamp = setFramesTimestamp();
     return true;
   }
 
-  /** Convenience method used to assign frame timestamps to individual frames based on video
-   * recording start time and the fps of video. */
-  private void setNextFrameTimeStamp() {
-    videoFrameTimestamp.add(recordStartTime + (framesProcessed * frameDuration));
+  /**
+   * Convenience method used to assign frame timestamps to individual frames based on video
+   * recording start time and the fps of video.
+   */
+  private ArrayList<Long> setFramesTimestamp() {
+    ArrayList<Long> timestamps = new ArrayList<Long>();
+    long recordStartTime = CameraFragment.Companion.getRecordingStartMillis();
+    long frameDuration = 1000L / CameraFragment.Companion.getFpsRecording();
+    for (int i = 0; i < frameList.size(); i++) {
+      timestamps.add(recordStartTime + (i * frameDuration));
+    }
+    return timestamps;
   }
 
-  public ArrayList<String> doOcr() {
+  public List<String> doOcr() {
     AnalyseVideo ocrOnVideoTask = new AnalyseVideo();
     try {
       return ocrOnVideoTask.execute().get();
@@ -80,28 +89,31 @@ public class VideoProcessor {
     }
   }
 
-  /** Iterates on video frames issuing an Ocr request. Requests video-frame timestamp assignment.
-   * Calls LagCalculator upon Ocr completion of all video frame.*/
-  private class AnalyseVideo extends AsyncTask<Void, Void, ArrayList<String>> {
+  //TODO: Replace AsyncTask with something more robust
+
+  /**
+   * Iterates on video frames issuing an Ocr request. Requests video-frame timestamp assignment.
+   * Calls LagCalculator upon Ocr completion of all video frame.
+   */
+  private class AnalyseVideo extends AsyncTask<Void, Void, List<String>> {
 
     @Override
-    protected ArrayList<String> doInBackground(Void ...values) {
-      ArrayList<String> resultsOCR = new ArrayList<>();
+    protected List<String> doInBackground(Void... values) {
+      TextRecognizer recognizer = TextRecognition.getClient();
+      List<String> resultsOCR = Arrays.asList(new String[frameList.size()]);
       Collection<Task<Text>> ocrTasks = new ArrayList<>();
       for (int i = 0; i < frameList.size(); i++) {
         InputImage imageHolder = InputImage.fromBitmap(frameList.get(i), 0);
-        final int finalI = i;
+        final int imageIndex = i;
         ocrTasks.add(
             recognizer
                 .process(imageHolder)
                 .addOnSuccessListener(
                     visionText -> {
-                      resultsOCR.add(visionText.getText());
+                      resultsOCR.set(imageIndex, visionText.getText());
                       Log.d(
                           ContentValues.TAG,
-                          "Text detected at index:" + finalI + " " + visionText.getText());
-                      setNextFrameTimeStamp();
-                      framesProcessed++;
+                          "Text detected at index:" + imageIndex + " " + visionText.getText());
                     })
                 .addOnFailureListener(
                     e -> Log.d(ContentValues.TAG, "Analyse failed with: " + e.getMessage())));

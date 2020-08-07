@@ -29,7 +29,7 @@ import androidx.appcompat.app.AppCompatActivity
 class CameraActivity : AppCompatActivity() {
 
     private lateinit var container: FrameLayout
-    internal lateinit var serverHandler: ServerHandler
+    lateinit var serverHandler: ServerHandler
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -56,6 +56,8 @@ class CameraActivity : AppCompatActivity() {
         }, IMMERSIVE_FLAG_TIMEOUT)
     }
 
+    //TODO: As this get's called after camera interface is finished capturing, the UI of app finishes.
+    // The results are calculated while the app UI closes. Add a UI until the processing completes.
     @RequiresApi(Build.VERSION_CODES.P)
     internal fun analyze(fileUri: Uri) {
         val videoProcessor = VideoProcessor()
@@ -69,7 +71,7 @@ class CameraActivity : AppCompatActivity() {
 
         val resultsOcr = videoProcessor.doOcr()
 
-        lagCalculator.calculateLag(serverTimestamps, videoProcessor.videoFrameTimestamp, resultsOcr, serverHandler.getSyncOffset())
+        lagCalculator.calculateLag(serverTimestamps, videoProcessor.videoFramesTimestamp, resultsOcr, serverHandler.getSyncOffset())
     }
 
     companion object {

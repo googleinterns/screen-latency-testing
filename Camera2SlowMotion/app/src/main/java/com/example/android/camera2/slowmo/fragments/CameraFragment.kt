@@ -26,6 +26,7 @@ import android.media.MediaCodec
 import android.media.MediaRecorder
 import android.media.MediaScannerConnection
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.HandlerThread
@@ -33,6 +34,7 @@ import android.util.Log
 import android.util.Range
 import android.util.Size
 import android.view.*
+import androidx.annotation.RequiresApi
 import androidx.core.content.FileProvider
 import androidx.core.graphics.drawable.toDrawable
 import androidx.fragment.app.Fragment
@@ -50,7 +52,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import java.io.File
-import java.lang.Exception
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.concurrent.schedule
@@ -194,6 +195,7 @@ class CameraFragment : Fragment() {
                     width: Int,
                     height: Int) = Unit
 
+            @RequiresApi(Build.VERSION_CODES.P)
             override fun surfaceCreated(holder: SurfaceHolder) {
 
                 // Selects appropriate preview size and configures view finder
@@ -278,6 +280,7 @@ class CameraFragment : Fragment() {
      * - Configures the camera session
      * - Starts the preview by dispatching a repeating burst request
      */
+    @RequiresApi(Build.VERSION_CODES.P)
     @SuppressLint("ClickableViewAccessibility")
     private fun initializeCamera() = lifecycleScope.launch(Dispatchers.Main) {
 
@@ -371,7 +374,7 @@ class CameraFragment : Fragment() {
                     // starts lifecycle of lag calculation
                     (activity as CameraActivity).analyze(fileUri)
 
-                    navController.popBackStack()
+                    //navController.popBackStack()
                 }
             }
 
