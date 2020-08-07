@@ -16,41 +16,34 @@
 
 package com.example.android.camera2.slowmo
 
+import android.content.ContentValues
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.FrameLayout
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
-import java.io.BufferedReader
-import java.io.IOException
-import java.io.InputStreamReader
-import java.io.PrintWriter
-import java.net.Socket
 
 class CameraActivity : AppCompatActivity() {
 
     private lateinit var container: FrameLayout
-    private val connectionThread = Thread({
-        try {
-            socket = Socket(SERVER_IP, laptopPort)
-            output = PrintWriter(socket.getOutputStream())
-            input = BufferedReader(InputStreamReader(socket.getInputStream()))
-            Log.d(TAG_AUTHOR, "Connection established")
-        } catch (e: IOException) {
-            e.printStackTrace()
-        }
-    })
+    lateinit var serverHandler: ServerHandler
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_camera)
         container = findViewById(R.id.fragment_container)
+
         val bundle = intent!!.extras
-        laptopPort = bundle?.getString("port")?.toInt() ?: 0
+        val laptopPort = bundle?.getString("port")?.toInt() ?: 0
         if (laptopPort != 0) {
-            connectionThread.start()
+            serverHandler = ServerHandler(laptopPort)
+            // TODO: Add retry or app fail if no connection established
+            serverHandler.startConnection()
         } else {
-            Log.d(TAG_AUTHOR, "No port information received form server. Unable to establish connection.")
+            Log.d(ContentValues.TAG, "No port information received form server. Unable to establish connection.")
         }
     }
 
@@ -61,6 +54,24 @@ class CameraActivity : AppCompatActivity() {
         container.postDelayed({
             container.systemUiVisibility = FLAGS_FULLSCREEN
         }, IMMERSIVE_FLAG_TIMEOUT)
+    }
+
+    //TODO: As this get's called after camera interface is finished capturing, the UI of app finishes.
+    // The results are calculated while the app UI closes. Add a UI until the processing completes.
+    @RequiresApi(Build.VERSION_CODES.P)
+    internal fun analyze(fileUri: Uri) {
+        val videoProcessor = VideoProcessor()
+        val lagCalculator = LagCalculator()
+
+        if (!videoProcessor.createVideoReader(applicationContext, fileUri)) {
+            finish()
+        }
+
+        val serverTimestamps = serverHandler.downloadServerTimeStamps()
+
+        val resultsOcr = videoProcessor.doOcr()
+
+        lagCalculator.calculateLag(serverTimestamps, videoProcessor.videoFramesTimestamp, resultsOcr, serverHandler.getSyncOffset())
     }
 
     companion object {
@@ -74,12 +85,6 @@ class CameraActivity : AppCompatActivity() {
         /** Milliseconds used for UI animations */
         const val ANIMATION_FAST_MILLIS = 50L
         const val ANIMATION_SLOW_MILLIS = 100L
-        private const val SERVER_IP = "127.0.0.1"
         private const val IMMERSIVE_FLAG_TIMEOUT = 500L
-        var laptopPort: Int = 0
-        lateinit var output:PrintWriter
-        lateinit var input:BufferedReader
-        lateinit var socket: Socket
-        private const val TAG_AUTHOR = "Rokus Logs:"
     }
 }

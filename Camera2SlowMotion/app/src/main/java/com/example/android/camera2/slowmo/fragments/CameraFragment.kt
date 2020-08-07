@@ -18,7 +18,6 @@ package com.example.android.camera2.slowmo.fragments
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.graphics.Color
 import android.hardware.camera2.*
@@ -26,6 +25,8 @@ import android.hardware.camera2.params.StreamConfigurationMap
 import android.media.MediaCodec
 import android.media.MediaRecorder
 import android.media.MediaScannerConnection
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.HandlerThread
@@ -33,6 +34,7 @@ import android.util.Log
 import android.util.Range
 import android.util.Size
 import android.view.*
+import androidx.annotation.RequiresApi
 import androidx.core.content.FileProvider
 import androidx.core.graphics.drawable.toDrawable
 import androidx.fragment.app.Fragment
@@ -43,7 +45,6 @@ import androidx.navigation.Navigation
 import com.example.android.camera.utils.*
 import com.example.android.camera2.slowmo.BuildConfig
 import com.example.android.camera2.slowmo.CameraActivity
-import com.example.android.camera2.slowmo.MainActivity
 import com.example.android.camera2.slowmo.R
 import kotlinx.android.synthetic.main.fragment_camera.*
 import kotlinx.coroutines.Dispatchers
@@ -194,6 +195,7 @@ class CameraFragment : Fragment() {
                     width: Int,
                     height: Int) = Unit
 
+            @RequiresApi(Build.VERSION_CODES.P)
             override fun surfaceCreated(holder: SurfaceHolder) {
 
                 // Selects appropriate preview size and configures view finder
@@ -278,6 +280,7 @@ class CameraFragment : Fragment() {
      * - Configures the camera session
      * - Starts the preview by dispatching a repeating burst request
      */
+    @RequiresApi(Build.VERSION_CODES.P)
     @SuppressLint("ClickableViewAccessibility")
     private fun initializeCamera() = lifecycleScope.launch(Dispatchers.Main) {
 
@@ -286,6 +289,8 @@ class CameraFragment : Fragment() {
 
         // Creates list of Surfaces where the camera will output frames
         val targets = listOf(viewFinder.holder.surface, recorderSurface)
+
+        val serverHandler = (activity as CameraActivity).serverHandler
 
         // Start a capture session using our open camera and list of Surfaces where frames will go
         session = createCaptureSession(camera, targets, cameraHandler)
@@ -327,16 +332,13 @@ class CameraFragment : Fragment() {
                     overlay.post(animationTask)
                     try {
                         Timer().schedule(CAMERA_START_DELAY){
-                            recordingStartMillis = System.currentTimeMillis()
-                            CameraActivity.output.write("started capture*")
-                            CameraActivity.output.flush()
+                            serverHandler.sendKeySimulationSignal()
                         }
-
-                    } catch (exc: Throwable) {
-                        Log.d(TAG_AUTHOR, "Failed to send Start Capture signal")
-                        Log.d(TAG_AUTHOR, exc.message)
-                        Log.d(TAG_AUTHOR, exc.cause.toString())
-                        Log.d(TAG_AUTHOR, exc.stackTrace.toString())
+                    } catch (exc: Exception) {
+                        Log.d(TAG, "Failed to send Start Capture signal")
+                        Log.d(TAG, exc.message.toString())
+                        Log.d(TAG, exc.cause.toString())
+                        Log.d(TAG, exc.stackTrace.toString())
                     }
                 }
 
@@ -363,23 +365,16 @@ class CameraFragment : Fragment() {
                             view.context, arrayOf(outputFile.absolutePath), null, null)
 
                     val authority = "${BuildConfig.APPLICATION_ID}.provider"
-                    filePath =  FileProvider.getUriForFile(view.context, authority, outputFile).toString()
+                    fileUri =  FileProvider.getUriForFile(view.context, authority, outputFile)
                     fpsRecording = cameraSetting.fps
-
-                    // Launch analyser activity via intent
-                    val intent = Intent(view.context, MainActivity::class.java)
-                    Log.d(TAG_AUTHOR, "starting intent call in kotlin")
-                    try {
-                        startActivity(intent)
-                    } catch (exc: Throwable) {
-                        Log.d(TAG_AUTHOR, exc.message)
-                        Log.d(TAG_AUTHOR, exc.cause.toString())
-                        Log.d(TAG_AUTHOR, exc.stackTrace.toString())
-                    }
 
                     // Finishes our current camera screen
                     delay(CameraActivity.ANIMATION_SLOW_MILLIS)
-                    navController.popBackStack()
+
+                    // starts lifecycle of lag calculation
+                    (activity as CameraActivity).analyze(fileUri)
+
+                    //navController.popBackStack()
                 }
             }
 
@@ -480,13 +475,12 @@ class CameraFragment : Fragment() {
 
     companion object {
         private val TAG = CameraFragment::class.java.simpleName
-        private val TAG_AUTHOR = "Rokus Logs:"
-        lateinit var filePath:String
-        var fpsRecording:Int = 0
-        var recordingStartMillis: Long = 0L
         private const val RECORDER_VIDEO_BITRATE: Int = 10000000
         private const val MIN_REQUIRED_RECORDING_TIME_MILLIS: Long = 1000L
-        private const val CAMERA_START_DELAY = 500L
+        private const val CAMERA_START_DELAY = 550L
+        lateinit var fileUri:Uri
+        var fpsRecording:Int = 0
+        var recordingStartMillis: Long = 0L
 
         /**
          * FPS rate for preview-only requests, 30 is *guaranteed* by framework. See:
