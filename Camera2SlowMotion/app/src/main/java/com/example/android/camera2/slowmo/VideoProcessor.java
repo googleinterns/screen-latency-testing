@@ -40,8 +40,7 @@ public class VideoProcessor {
 
   /* Creates media-reader and loads available video frames. */
   @RequiresApi(api = VERSION_CODES.P)
-  public void createVideoReader(Context applicationContext, Uri fileUri)
-      throws ExecutionException, InterruptedException {
+  public void createVideoReader(Context applicationContext, Uri fileUri){
     frameList =
         CompletableFuture.supplyAsync(
             () -> {

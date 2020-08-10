@@ -38,18 +38,19 @@ func main() {
 
 	hostReader := bufio.NewReader(conn)
 	timeStamps := make([]string, KEY_PRESS_COUNT+1)
+	keyPressSequence := make([]string, KEY_PRESS_COUNT+1)
 
 	message, _ := hostReader.ReadString('*') // using * as delim and hardcoded in app to append * at end of message
 	fmt.Println(message)
 	if message == "started capture"+"*" {
-		simulateKeyPress(KEY, KEY_PRESS_COUNT, timeStamps)
+		simulateKeyPress(KEY, KEY_PRESS_COUNT, timeStamps, keyPressSequence)
 	}
 	fmt.Println("Key simulation ended")
 
 	message, _ = hostReader.ReadString('*') // using * as delim and hardcoded in app to append * at end of message
 	fmt.Println(message)
 	if message == "send timestamps"+"*" {
-		sendTimeStamps(conn, timeStamps)
+		sendTimeStamps(conn, timeStamps, keyPressSequence)
 	}
 }
 
@@ -67,18 +68,23 @@ func runOsCommand(cmd *exec.Cmd) int {
 	return 1
 }
 
-func simulateKeyPress(key string, keyPressCount int, timeStamps []string) {
+func simulateKeyPress(key string, keyPressCount int, timeStamps []string, keyPressSequence []string) {
 	timeStamps[0] = strconv.Itoa(int(time.Now().UnixNano() / 1000000))
 	time.Sleep(1 * time.Second)
+	runningSeq := ""
+	keyPressSequence[0] = runningSeq
 	for i := 1; i <= keyPressCount; i++ {
 		robotgo.TypeStr(key)
+		runningSeq += key
+		keyPressSequence[i] = runningSeq
 		timeStamps[i] = strconv.Itoa(int(time.Now().UnixNano() / 1000000))
 		time.Sleep(100 * time.Millisecond)
 	}
 }
 
-func sendTimeStamps(conn net.Conn, timeStamps []string) {
+func sendTimeStamps(conn net.Conn, timeStamps []string, keyPressSequence []string) {
 	for i := 0; i < len(timeStamps); i++ {
 		fmt.Fprint(conn, timeStamps[i]+"\n")
+		fmt.Fprint(conn, keyPressSequence[i]+"\n")
 	}
 }

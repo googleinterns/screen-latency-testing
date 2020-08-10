@@ -23,6 +23,15 @@ public class ServerHandler {
     PrintWriter outputWriter;
   }
 
+  public class ServerData{
+    ArrayList<Long> timestamps;
+    ArrayList<String> serverSequence;
+    ServerData(){
+      this.timestamps = new ArrayList<>();
+      this.serverSequence = new ArrayList<>();
+    }
+  }
+
   private Integer serverSocketPort;
   private CompletableFuture<Long> serverStartTimestamp;
   private CompletableFuture<Connection> connection;
@@ -84,12 +93,12 @@ public class ServerHandler {
   }
 
   @RequiresApi(api = VERSION_CODES.N)
-  public CompletableFuture<ArrayList<Long>> downloadServerTimeStamps() {
-    CompletableFuture<ArrayList<Long>> timestamps =
+  public CompletableFuture<ServerData> downloadServerTimeStampsAndSequence() {
+    CompletableFuture<ServerData> serverTimestampAndSequence =
         connection.thenApply(
             conn -> {
               synchronized (conn) {
-                ArrayList<Long> serverTimestamps = new ArrayList<>();
+                ServerData serverData = new ServerData();
                 try {
                   Log.d(ContentValues.TAG, "Sending request to download timestamps");
                   conn.outputWriter.write("send timestamps" + "*");
@@ -99,18 +108,23 @@ public class ServerHandler {
                   String message = conn.inputReader.readLine();
 
                   while (message != null) {
-                    serverTimestamps.add(Long.valueOf(message));
+                    serverData.timestamps.add(Long.valueOf(message));
                     Log.d(ContentValues.TAG, "Server TimeStamp:" + message);
+
+                    message = conn.inputReader.readLine();
+                    serverData.serverSequence.add(message);
+                    Log.d(ContentValues.TAG, "Server Sequence:" + message);
+
                     message = conn.inputReader.readLine();
                   }
                   Log.d(ContentValues.TAG, "All timestamps from server received.");
                 } catch (IOException e) {
                   Log.d(ContentValues.TAG, "Server TimeStamp read failed");
                 }
-                return serverTimestamps;
+                return serverData;
               }
             });
-    serverStartTimestamp = timestamps.thenApply(times -> times.get(0));
-    return timestamps;
+    serverStartTimestamp = serverTimestampAndSequence.thenApply(data -> data.timestamps.get(0));
+    return serverTimestampAndSequence;
   }
 }

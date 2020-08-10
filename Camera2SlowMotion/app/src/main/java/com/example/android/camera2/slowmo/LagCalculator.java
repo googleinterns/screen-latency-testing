@@ -2,6 +2,7 @@ package com.example.android.camera2.slowmo;
 
 import android.content.ContentValues;
 import android.util.Log;
+import com.example.android.camera2.slowmo.ServerHandler.ServerData;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -16,32 +17,30 @@ import org.jetbrains.annotations.Nullable;
 public class LagCalculator {
 
   public ArrayList<Long> calculateLag(
-      @Nullable CompletableFuture<ArrayList<Long>> serverTimestamps,
-      @Nullable CompletableFuture<ArrayList<Long>> videoFramesTimestamp,
-      @Nullable CompletableFuture<ArrayList<String>> resultsOcr,
-      @Nullable CompletableFuture<Long> serverHostSyncOffset)
+      CompletableFuture<ServerData> serverData,
+      CompletableFuture<ArrayList<Long>> videoFramesTimestamp,
+      CompletableFuture<ArrayList<String>> resultsOcr,
+      CompletableFuture<Long> serverHostSyncOffset)
       throws ExecutionException, InterruptedException {
 
     ArrayList<Long> lagResults = new ArrayList<>();
-    if (serverTimestamps.get().size() < 2 || videoFramesTimestamp.get().size() < 2) {
+    if (serverData.get().timestamps.size() < 2 || videoFramesTimestamp.get().size() < 2) {
       Log.d(ContentValues.TAG, "No results to show. Insufficient server-host data.");
       return null;
     }
-    // TODO: Server sequence is hardcoded. Add functionality to receive serverSequence.
-    String serverSequence = "m";
+
     Log.d(ContentValues.TAG, "Server-Host Sync offset:" + serverHostSyncOffset.get());
 
     // Finds the video frame with the running serverSequence text.
-    for (int j = 1; j < serverTimestamps.get().size(); j++) {
+    for (int j = 1; j < serverData.get().timestamps.size(); j++) {
       for (int i = 0; i < resultsOcr.get().size(); i++) {
-        if (resultsOcr.get().get(i).startsWith(serverSequence)) {
-          long lag = videoFramesTimestamp.get().get(i) - serverTimestamps.get().get(j) + serverHostSyncOffset.get();
+        if (resultsOcr.get().get(i).startsWith(serverData.get().serverSequence.get(j))) {
+          long lag = videoFramesTimestamp.get().get(i) - serverData.get().timestamps.get(j) + serverHostSyncOffset.get();
           lagResults.add(lag);
           Log.d("Lag:", String.valueOf(lag));
           break;
         }
       }
-      serverSequence += "m";
     }
     return lagResults;
   }

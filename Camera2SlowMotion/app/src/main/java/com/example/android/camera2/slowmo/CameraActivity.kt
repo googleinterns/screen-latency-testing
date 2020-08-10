@@ -57,8 +57,6 @@ class CameraActivity : AppCompatActivity() {
         }, IMMERSIVE_FLAG_TIMEOUT)
     }
 
-    //TODO: As this get's called after camera interface is finished capturing, the UI of app finishes.
-    // The results are calculated while the app UI closes. Add a UI until the processing completes.
     @RequiresApi(Build.VERSION_CODES.P)
     internal fun analyze(fileUri: Uri) {
         val videoProcessor = VideoProcessor()
@@ -66,11 +64,11 @@ class CameraActivity : AppCompatActivity() {
 
         videoProcessor.createVideoReader(applicationContext, fileUri)
 
-        val serverTimestamps = serverHandler.downloadServerTimeStamps()
+        val serverTimestampsAndSequence = serverHandler.downloadServerTimeStampsAndSequence()
 
         val resultsOcr = videoProcessor.doOcr()
 
-        val lagResults = lagCalculator.calculateLag(serverTimestamps, videoProcessor.videoFramesTimestamp, resultsOcr, serverHandler.syncOffset)
+        val lagResults = lagCalculator.calculateLag(serverTimestampsAndSequence, videoProcessor.videoFramesTimestamp, resultsOcr, serverHandler.syncOffset)
     }
 
     companion object {
