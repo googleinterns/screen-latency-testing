@@ -4,6 +4,10 @@ import android.content.ContentValues;
 import android.util.Log;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Calculates lag of each key-press on the server using the key-press timestamps from server and
@@ -12,25 +16,26 @@ import java.util.List;
 public class LagCalculator {
 
   public ArrayList<Long> calculateLag(
-      ArrayList<Long> serverTimestamps,
-      ArrayList<Long> videoFrameTimestamp,
-      List<String> resultsOcr,
-      long serverHostSyncOffset) {
+      @Nullable CompletableFuture<ArrayList<Long>> serverTimestamps,
+      @Nullable CompletableFuture<ArrayList<Long>> videoFramesTimestamp,
+      @Nullable CompletableFuture<ArrayList<String>> resultsOcr,
+      @Nullable CompletableFuture<Long> serverHostSyncOffset)
+      throws ExecutionException, InterruptedException {
 
     ArrayList<Long> lagResults = new ArrayList<>();
-    if (serverTimestamps.size() < 2 || videoFrameTimestamp.size() < 2) {
+    if (serverTimestamps.get().size() < 2 || videoFramesTimestamp.get().size() < 2) {
       Log.d(ContentValues.TAG, "No results to show. Insufficient server-host data.");
       return null;
     }
     // TODO: Server sequence is hardcoded. Add functionality to receive serverSequence.
     String serverSequence = "m";
-    Log.d(ContentValues.TAG, "Server-Host Sync offset:" + serverHostSyncOffset);
+    Log.d(ContentValues.TAG, "Server-Host Sync offset:" + serverHostSyncOffset.get());
 
     // Finds the video frame with the running serverSequence text.
-    for (int j = 1; j < serverTimestamps.size(); j++) {
-      for (int i = 0; i < resultsOcr.size(); i++) {
-        if (resultsOcr.get(i).startsWith(serverSequence)) {
-          long lag = videoFrameTimestamp.get(i) - serverTimestamps.get(j) + serverHostSyncOffset;
+    for (int j = 1; j < serverTimestamps.get().size(); j++) {
+      for (int i = 0; i < resultsOcr.get().size(); i++) {
+        if (resultsOcr.get().get(i).startsWith(serverSequence)) {
+          long lag = videoFramesTimestamp.get().get(i) - serverTimestamps.get().get(j) + serverHostSyncOffset.get();
           lagResults.add(lag);
           Log.d("Lag:", String.valueOf(lag));
           break;

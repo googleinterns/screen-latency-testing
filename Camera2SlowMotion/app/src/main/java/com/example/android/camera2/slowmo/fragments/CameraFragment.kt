@@ -373,8 +373,6 @@ class CameraFragment : Fragment() {
 
                     // starts lifecycle of lag calculation
                     (activity as CameraActivity).analyze(fileUri)
-
-                    //navController.popBackStack()
                 }
             }
 

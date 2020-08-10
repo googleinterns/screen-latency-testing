@@ -31,6 +31,7 @@ class CameraActivity : AppCompatActivity() {
     private lateinit var container: FrameLayout
     lateinit var serverHandler: ServerHandler
 
+    @RequiresApi(Build.VERSION_CODES.N)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_camera)
@@ -63,15 +64,13 @@ class CameraActivity : AppCompatActivity() {
         val videoProcessor = VideoProcessor()
         val lagCalculator = LagCalculator()
 
-        if (!videoProcessor.createVideoReader(applicationContext, fileUri)) {
-            finish()
-        }
+        videoProcessor.createVideoReader(applicationContext, fileUri)
 
         val serverTimestamps = serverHandler.downloadServerTimeStamps()
 
         val resultsOcr = videoProcessor.doOcr()
 
-        lagCalculator.calculateLag(serverTimestamps, videoProcessor.videoFramesTimestamp, resultsOcr, serverHandler.getSyncOffset())
+        val lagResults = lagCalculator.calculateLag(serverTimestamps, videoProcessor.videoFramesTimestamp, resultsOcr, serverHandler.syncOffset)
     }
 
     companion object {
