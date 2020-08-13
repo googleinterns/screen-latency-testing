@@ -330,10 +330,10 @@ class CameraFragment : Fragment() {
 
                     // Starts recording animation
                     overlay.post(animationTask)
+
+                    // Send signal to start key simulation in server text editor.
                     try {
-                        Timer().schedule(CAMERA_START_DELAY){
                             serverHandler.sendKeySimulationSignal()
-                        }
                     } catch (exc: Exception) {
                         Log.d(TAG, "Failed to send Start Capture signal")
                         Log.d(TAG, exc.message.toString())
@@ -475,7 +475,6 @@ class CameraFragment : Fragment() {
         private val TAG = CameraFragment::class.java.simpleName
         private const val RECORDER_VIDEO_BITRATE: Int = 10000000
         private const val MIN_REQUIRED_RECORDING_TIME_MILLIS: Long = 1000L
-        private const val CAMERA_START_DELAY = 550L
         lateinit var fileUri:Uri
         var fpsRecording:Int = 0
         var recordingStartMillis: Long = 0L

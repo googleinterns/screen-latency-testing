@@ -25,6 +25,7 @@ import android.view.View
 import android.widget.FrameLayout
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
+import com.example.android.camera2.slowmo.fragments.CameraFragment
 
 class CameraActivity : AppCompatActivity() {
 
@@ -60,15 +61,13 @@ class CameraActivity : AppCompatActivity() {
     @RequiresApi(Build.VERSION_CODES.P)
     internal fun analyze(fileUri: Uri) {
         val videoProcessor = VideoProcessor()
-        val lagCalculator = LagCalculator()
 
         videoProcessor.createVideoReader(applicationContext, fileUri)
 
-        val serverTimestampsAndSequence = serverHandler.downloadServerTimeStampsAndSequence()
-
         val resultsOcr = videoProcessor.doOcr()
 
-        val lagResults = lagCalculator.calculateLag(serverTimestampsAndSequence, videoProcessor.videoFramesTimestamp, resultsOcr, serverHandler.syncOffset)
+        serverHandler.sendOcrResults(
+                resultsOcr.get(), CameraFragment.recordingStartMillis, CameraFragment.fpsRecording)
     }
 
     companion object {

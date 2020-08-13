@@ -10,7 +10,6 @@ import android.net.Uri;
 import android.os.Build.VERSION_CODES;
 import android.util.Log;
 import androidx.annotation.RequiresApi;
-import com.example.android.camera2.slowmo.fragments.CameraFragment;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.mlkit.vision.common.InputImage;
@@ -32,15 +31,10 @@ public class VideoProcessor {
 
   private static final int FRAME_CHUNK_READ_SIZE = 100;
   private CompletableFuture<List<Bitmap>> frameList;
-  private CompletableFuture<ArrayList<Long>> videoFramesTimestamp;
-
-  public CompletableFuture<ArrayList<Long>> getVideoFramesTimestamp() {
-    return videoFramesTimestamp;
-  }
 
   /* Creates media-reader and loads available video frames. */
   @RequiresApi(api = VERSION_CODES.P)
-  public void createVideoReader(Context applicationContext, Uri fileUri){
+  public void createVideoReader(Context applicationContext, Uri fileUri) {
     frameList =
         CompletableFuture.supplyAsync(
             () -> {
@@ -63,40 +57,17 @@ public class VideoProcessor {
               }
               return frames;
             });
-    videoFramesTimestamp = setFramesTimestamp();
-  }
-
-  /**
-   * Convenience method used to assign frame timestamps to individual frames based on video
-   * recording start time and the fps of video.
-   */
-  @RequiresApi(api = VERSION_CODES.N)
-  private CompletableFuture<ArrayList<Long>> setFramesTimestamp() {
-    CompletableFuture<ArrayList<Long>> videoFrameTimestamps =
-        frameList.thenApply(
-            frames -> {
-              synchronized (frames) {
-                ArrayList<Long> timestamps = new ArrayList<>();
-                long recordStartTime = CameraFragment.Companion.getRecordingStartMillis();
-                long frameDuration = 1000L / CameraFragment.Companion.getFpsRecording();
-                for (int i = 0; i < frames.size(); i++) {
-                  timestamps.add(recordStartTime + (i * frameDuration));
-                }
-                return timestamps;
-              }
-            });
-    return videoFrameTimestamps;
   }
 
   @RequiresApi(api = VERSION_CODES.N)
-  public CompletableFuture<ArrayList<String>> doOcr() {
-    CompletableFuture<ArrayList<String>> resultsOCR =
+  public CompletableFuture<ArrayList<Text>> doOcr() {
+    CompletableFuture<ArrayList<Text>> resultsOCR =
         frameList.thenApply(
             frames -> {
               synchronized (frames) {
                 TextRecognizer recognizer = TextRecognition.getClient();
                 Collection<Task<Text>> ocrTasks = new ArrayList<>();
-                ArrayList<String> ocrTexts = new ArrayList<>();
+                ArrayList<Text> ocrTexts = new ArrayList<>();
                 for (int i = 0; i < frames.size(); i++) {
                   InputImage imageHolder = InputImage.fromBitmap(frames.get(i), 0);
                   final int imageIndex = i;
@@ -105,7 +76,7 @@ public class VideoProcessor {
                           .process(imageHolder)
                           .addOnSuccessListener(
                               visionText -> {
-                                ocrTexts.add(visionText.getText());
+                                ocrTexts.add(visionText);
                                 Log.d(
                                     ContentValues.TAG,
                                     "Text detected at index:"

@@ -1,12 +1,12 @@
 package main
 
 import (
-	"bufio"
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"net"
 	"os/exec"
-	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-vgo/robotgo"
@@ -14,6 +14,29 @@ import (
 
 const KEY = "m"
 const KEY_PRESS_COUNT = 10
+const CAMERA_STARTUP_DELAY = 450 // Manual calibration offset
+
+type action struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+}
+
+type point struct {
+	X int `json:"x"`
+	Y int `json:"y"`
+}
+
+type frameData struct {
+	CornerPoints []point `json:"cornerPoints"`
+	Line         []string
+}
+
+type hostData struct {
+	FramesMetaData           []frameData `json:"framesMetaData"`
+	RecordingStartTimeMillis int64       `json:"recordingStartTime"`
+	VideoFps                 int64       `json:"videoFps"`
+	HostSyncTimestamp        int64       `json:"hostSyncTimestamp"`
+}
 
 func main() {
 	fmt.Println("Start server...")
@@ -36,22 +59,49 @@ func main() {
 	fmt.Println("Got connection from:")
 	fmt.Println(conn.LocalAddr().String())
 
-	hostReader := bufio.NewReader(conn)
-	timeStamps := make([]string, KEY_PRESS_COUNT+1)
-	keyPressSequence := make([]string, KEY_PRESS_COUNT+1)
+	timestamps := make([]int64, KEY_PRESS_COUNT+1)
 
-	message, _ := hostReader.ReadString('*') // using * as delim and hardcoded in app to append * at end of message
-	fmt.Println(message)
-	if message == "started capture"+"*" {
-		simulateKeyPress(KEY, KEY_PRESS_COUNT, timeStamps, keyPressSequence)
-	}
-	fmt.Println("Key simulation ended")
+	hostCommunicator := json.NewDecoder(conn)
 
-	message, _ = hostReader.ReadString('*') // using * as delim and hardcoded in app to append * at end of message
-	fmt.Println(message)
-	if message == "send timestamps"+"*" {
-		sendTimeStamps(conn, timeStamps, keyPressSequence)
+	var hostAction action
+
+	for {
+		err := hostCommunicator.Decode(&hostAction)
+		fmt.Println(err)
+		if hostAction.Code == 1 {
+			simulateKeyPress(KEY, KEY_PRESS_COUNT, timestamps)
+		} else if hostAction.Code == 2 {
+			var ocrData hostData
+			hostCommunicator.Decode(&ocrData)
+			calculateLag(ocrData, timestamps)
+		}
 	}
+}
+
+func calculateLag(ocrData hostData, timestamps []int64) []int64 {
+	lagResults := make([]int64, KEY_PRESS_COUNT+1)
+	syncOffset := ocrData.HostSyncTimestamp - timestamps[0]
+
+	searchKey := ""
+	frameDuration := 1000 / ocrData.VideoFps
+	for i := 1; i < len(timestamps); i++ {
+		searchKey += KEY
+		found := false
+		for j := 0; j < len(ocrData.FramesMetaData); j++ {
+			for k := 0; k < len(ocrData.FramesMetaData[j].Line); k++ {
+				if strings.HasPrefix(ocrData.FramesMetaData[j].Line[k], searchKey) {
+					lagResults[i-1] = timestamps[i] - (ocrData.RecordingStartTimeMillis + (int64(j) * frameDuration)) + syncOffset - CAMERA_STARTUP_DELAY
+					found = true
+					break
+				}
+			}
+			if found {
+				fmt.Println("Lag = ", lagResults[i-1], "ms")
+				break
+			}
+		}
+	}
+	return lagResults
 }
 
 func runOsCommand(cmd *exec.Cmd) int {
@@ -68,23 +118,13 @@ func runOsCommand(cmd *exec.Cmd) int {
 	return 1
 }
 
-func simulateKeyPress(key string, keyPressCount int, timeStamps []string, keyPressSequence []string) {
-	timeStamps[0] = strconv.Itoa(int(time.Now().UnixNano() / 1000000))
+func simulateKeyPress(key string, keyPressCount int, timestamps []int64) {
+	timestamps[0] = time.Now().UnixNano() / 1000000
 	time.Sleep(1 * time.Second)
-	runningSeq := ""
-	keyPressSequence[0] = runningSeq
 	for i := 1; i <= keyPressCount; i++ {
 		robotgo.TypeStr(key)
-		runningSeq += key
-		keyPressSequence[i] = runningSeq
-		timeStamps[i] = strconv.Itoa(int(time.Now().UnixNano() / 1000000))
+		timestamps[i] = time.Now().UnixNano() / 1000000
 		time.Sleep(100 * time.Millisecond)
 	}
-}
-
-func sendTimeStamps(conn net.Conn, timeStamps []string, keyPressSequence []string) {
-	for i := 0; i < len(timeStamps); i++ {
-		fmt.Fprint(conn, timeStamps[i]+"\n")
-		fmt.Fprint(conn, keyPressSequence[i]+"\n")
-	}
+	fmt.Println("Key simulation ended")
 }

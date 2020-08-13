@@ -1,9 +1,12 @@
 package com.example.android.camera2.slowmo;
 
 import android.content.ContentValues;
+import android.graphics.Point;
 import android.os.Build.VERSION_CODES;
 import android.util.Log;
 import androidx.annotation.RequiresApi;
+import com.google.gson.GsonBuilder;
+import com.google.mlkit.vision.text.Text;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -12,7 +15,6 @@ import java.io.UncheckedIOException;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 
 /** Handles every interaction of app with the server. */
@@ -23,17 +25,41 @@ public class ServerHandler {
     PrintWriter outputWriter;
   }
 
-  public class ServerData{
-    ArrayList<Long> timestamps;
-    ArrayList<String> serverSequence;
-    ServerData(){
-      this.timestamps = new ArrayList<>();
-      this.serverSequence = new ArrayList<>();
+  private class HostData {
+    ArrayList<FrameData> framesMetaData;
+    long recordingStartTime;
+    long videoFps;
+    Long hostSyncTimestamp;
+
+    public HostData(ArrayList<FrameData> ocrTexts, long recordingStartTime, long videoFps,
+        Long syncOffset) {
+      this.framesMetaData = ocrTexts;
+      this.recordingStartTime = recordingStartTime;
+      this.videoFps = videoFps;
+      this.hostSyncTimestamp = syncOffset;
+    }
+  }
+
+  private class FrameData{
+    ArrayList<String> line;
+    ArrayList<Point[]> cornerPoints;
+
+    public FrameData() {
+      line = new ArrayList<>();
+      cornerPoints = new ArrayList<Point[]>();
+    }
+  }
+
+  private class ServerAction {
+    int code;
+    String message;
+    ServerAction(int code, String message){
+      this.code = code;
+      this.message = message;
     }
   }
 
   private Integer serverSocketPort;
-  private CompletableFuture<Long> serverStartTimestamp;
   private CompletableFuture<Connection> connection;
   private CompletableFuture<Long> hostSyncTimestamp;
 
@@ -71,8 +97,10 @@ public class ServerHandler {
         connection.thenApply(
             conn -> {
               synchronized (conn) {
+                ServerAction captureStarted = new ServerAction(1, "Started Capture");
+                String json = new GsonBuilder().create().toJson(captureStarted);
                 long ts = System.currentTimeMillis();
-                conn.outputWriter.write("started capture*");
+                conn.outputWriter.write(json);
                 conn.outputWriter.flush();
                 return ts;
               }
@@ -80,51 +108,40 @@ public class ServerHandler {
   }
 
   @RequiresApi(api = VERSION_CODES.N)
-  public CompletableFuture<Long> getSyncOffset() {
-    return CompletableFuture.allOf(serverStartTimestamp, hostSyncTimestamp)
-        .thenApply(
-            unused -> {
-              try {
-                return serverStartTimestamp.get() - hostSyncTimestamp.get();
-              } catch (InterruptedException | ExecutionException e) {
-                throw new CompletionException(e);
-              }
-            });
+  public void sendOcrResults(
+      ArrayList<Text> resultsOcr, long recordingStartMillis, int fpsRecording) {
+    connection.thenApply(
+        conn -> {
+          synchronized (conn) {
+            ArrayList<FrameData> framesMetaData = parseTextObjects(resultsOcr);
+            try {
+              HostData hostData = new HostData(framesMetaData, recordingStartMillis, fpsRecording, hostSyncTimestamp.get());
+              ServerAction receiveResults = new ServerAction(2, "Sending results");
+              conn.outputWriter.write(new GsonBuilder().create().toJson(receiveResults));
+              conn.outputWriter.flush();
+
+              conn.outputWriter.write(new GsonBuilder().create().toJson(hostData));
+              conn.outputWriter.flush();
+            } catch (ExecutionException | InterruptedException e) {
+              e.printStackTrace();
+            }
+          }
+          return null;
+        });
   }
 
-  @RequiresApi(api = VERSION_CODES.N)
-  public CompletableFuture<ServerData> downloadServerTimeStampsAndSequence() {
-    CompletableFuture<ServerData> serverTimestampAndSequence =
-        connection.thenApply(
-            conn -> {
-              synchronized (conn) {
-                ServerData serverData = new ServerData();
-                try {
-                  Log.d(ContentValues.TAG, "Sending request to download timestamps");
-                  conn.outputWriter.write("send timestamps" + "*");
-                  conn.outputWriter.flush();
-                  Log.d(
-                      ContentValues.TAG, "Request sent to server. Waiting to receive timestamps..");
-                  String message = conn.inputReader.readLine();
-
-                  while (message != null) {
-                    serverData.timestamps.add(Long.valueOf(message));
-                    Log.d(ContentValues.TAG, "Server TimeStamp:" + message);
-
-                    message = conn.inputReader.readLine();
-                    serverData.serverSequence.add(message);
-                    Log.d(ContentValues.TAG, "Server Sequence:" + message);
-
-                    message = conn.inputReader.readLine();
-                  }
-                  Log.d(ContentValues.TAG, "All timestamps from server received.");
-                } catch (IOException e) {
-                  Log.d(ContentValues.TAG, "Server TimeStamp read failed");
-                }
-                return serverData;
-              }
-            });
-    serverStartTimestamp = serverTimestampAndSequence.thenApply(data -> data.timestamps.get(0));
-    return serverTimestampAndSequence;
+  private ArrayList<FrameData> parseTextObjects(ArrayList<Text> resultsOcr) {
+    ArrayList<FrameData> framesMetaData = new ArrayList<>();
+    for(Text frameText : resultsOcr){
+      FrameData frameData = new FrameData();
+      for(Text.TextBlock block : frameText.getTextBlocks()){
+        for(Text.Line line : block.getLines()){
+          frameData.cornerPoints.add(line.getCornerPoints());
+          frameData.line.add(line.getText());
+        }
+      }
+      framesMetaData.add(frameData);
+    }
+    return framesMetaData;
   }
 }
