@@ -5,6 +5,7 @@ import static android.media.MediaMetadataRetriever.METADATA_KEY_VIDEO_FRAME_COUN
 import android.content.ContentValues;
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.Point;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.os.Build.VERSION_CODES;
@@ -17,6 +18,7 @@ import com.google.mlkit.vision.text.Text;
 import com.google.mlkit.vision.text.TextRecognition;
 import com.google.mlkit.vision.text.TextRecognizer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -28,6 +30,16 @@ import java.util.concurrent.ExecutionException;
  * further compute the lag results.
  */
 public class VideoProcessor {
+
+  public class FrameData {
+    ArrayList<String> line;
+    ArrayList<Point[]> cornerPoints;
+
+    public FrameData() {
+      line = new ArrayList<>();
+      cornerPoints = new ArrayList<Point[]>();
+    }
+  }
 
   private static final int FRAME_CHUNK_READ_SIZE = 100;
   private CompletableFuture<List<Bitmap>> frameList;
@@ -60,46 +72,56 @@ public class VideoProcessor {
   }
 
   @RequiresApi(api = VERSION_CODES.N)
-  public CompletableFuture<ArrayList<Text>> doOcr() {
-    CompletableFuture<ArrayList<Text>> resultsOCR =
+  public CompletableFuture<List<FrameData>> doOcr() {
+    CompletableFuture<List<FrameData>> resultsOCR =
         frameList.thenApply(
             frames -> {
-              synchronized (frames) {
-                TextRecognizer recognizer = TextRecognition.getClient();
-                Collection<Task<Text>> ocrTasks = new ArrayList<>();
-                ArrayList<Text> ocrTexts = new ArrayList<>();
-                for (int i = 0; i < frames.size(); i++) {
-                  InputImage imageHolder = InputImage.fromBitmap(frames.get(i), 0);
-                  final int imageIndex = i;
-                  ocrTasks.add(
-                      recognizer
-                          .process(imageHolder)
-                          .addOnSuccessListener(
-                              visionText -> {
-                                ocrTexts.add(visionText);
+              TextRecognizer recognizer = TextRecognition.getClient();
+              Collection<Task<Text>> ocrTasks = new ArrayList<>();
+              List<FrameData> ocrTexts = Arrays.asList(new FrameData[frames.size()]);
+              for (int i = 0; i < frames.size(); i++) {
+                InputImage imageHolder = InputImage.fromBitmap(frames.get(i), 0);
+                final int imageIndex = i;
+                ocrTasks.add(
+                    recognizer
+                        .process(imageHolder)
+                        .addOnSuccessListener(
+                            visionText -> {
+                              ocrTexts.set(imageIndex, parseTextObject(visionText));
+                              Log.d(
+                                  ContentValues.TAG,
+                                  "Text detected at index:"
+                                      + imageIndex
+                                      + " "
+                                      + visionText.getText());
+                            })
+                        .addOnFailureListener(
+                            e ->
                                 Log.d(
-                                    ContentValues.TAG,
-                                    "Text detected at index:"
-                                        + imageIndex
-                                        + " "
-                                        + visionText.getText());
-                              })
-                          .addOnFailureListener(
-                              e ->
-                                  Log.d(
-                                      ContentValues.TAG,
-                                      "Analyse failed with: " + e.getMessage())));
-                }
-                Task finalTask = Tasks.whenAllComplete(ocrTasks);
-                try {
-                  Tasks.await(finalTask);
-                  return ocrTexts;
-                } catch (InterruptedException | ExecutionException e) {
-                  e.printStackTrace();
-                  return null;
-                }
+                                    ContentValues.TAG, "Analyse failed with: " + e.getMessage())));
+              }
+              Task finalTask = Tasks.whenAllComplete(ocrTasks);
+              try {
+                // This task await is making the background thread responsible for ocr calls wait
+                // and not the main UI thread.
+                Tasks.await(finalTask);
+                return ocrTexts;
+              } catch (InterruptedException | ExecutionException e) {
+                e.printStackTrace();
+                return null;
               }
             });
     return resultsOCR;
+  }
+
+  private FrameData parseTextObject(Text frameText) {
+    FrameData frameData = new FrameData();
+    for (Text.TextBlock block : frameText.getTextBlocks()) {
+      for (Text.Line line : block.getLines()) {
+        frameData.cornerPoints.add(line.getCornerPoints());
+        frameData.line.add(line.getText());
+      }
+    }
+    return frameData;
   }
 }

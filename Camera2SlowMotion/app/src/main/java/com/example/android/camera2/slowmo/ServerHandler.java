@@ -1,19 +1,18 @@
 package com.example.android.camera2.slowmo;
 
 import android.content.ContentValues;
-import android.graphics.Point;
 import android.os.Build.VERSION_CODES;
 import android.util.Log;
 import androidx.annotation.RequiresApi;
+import com.example.android.camera2.slowmo.VideoProcessor.FrameData;
 import com.google.gson.GsonBuilder;
-import com.google.mlkit.vision.text.Text;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.UncheckedIOException;
 import java.net.Socket;
-import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
@@ -26,27 +25,17 @@ public class ServerHandler {
   }
 
   private class HostData {
-    ArrayList<FrameData> framesMetaData;
+    List<FrameData> framesMetaData;
     long recordingStartTime;
     long videoFps;
-    Long hostSyncTimestamp;
+    long hostSyncTimestamp;
 
-    public HostData(ArrayList<FrameData> ocrTexts, long recordingStartTime, long videoFps,
+    public HostData(List<FrameData> ocrTexts, long recordingStartTime, long videoFps,
         Long syncOffset) {
       this.framesMetaData = ocrTexts;
       this.recordingStartTime = recordingStartTime;
       this.videoFps = videoFps;
       this.hostSyncTimestamp = syncOffset;
-    }
-  }
-
-  private class FrameData{
-    ArrayList<String> line;
-    ArrayList<Point[]> cornerPoints;
-
-    public FrameData() {
-      line = new ArrayList<>();
-      cornerPoints = new ArrayList<Point[]>();
     }
   }
 
@@ -59,9 +48,11 @@ public class ServerHandler {
     }
   }
 
-  private Integer serverSocketPort;
+  private int serverSocketPort;
   private CompletableFuture<Connection> connection;
   private CompletableFuture<Long> hostSyncTimestamp;
+  private final int ACTION_CAPTURE_STARTED = 1;
+  private final int ACTION_CAPTURE_RESULTS = 2;
 
   public ServerHandler(Integer serverSocketPort) {
     this.serverSocketPort = serverSocketPort;
@@ -97,7 +88,7 @@ public class ServerHandler {
         connection.thenApply(
             conn -> {
               synchronized (conn) {
-                ServerAction captureStarted = new ServerAction(1, "Started Capture");
+                ServerAction captureStarted = new ServerAction(ACTION_CAPTURE_STARTED, "Started Capture");
                 String json = new GsonBuilder().create().toJson(captureStarted);
                 long ts = System.currentTimeMillis();
                 conn.outputWriter.write(json);
@@ -109,14 +100,13 @@ public class ServerHandler {
 
   @RequiresApi(api = VERSION_CODES.N)
   public void sendOcrResults(
-      ArrayList<Text> resultsOcr, long recordingStartMillis, int fpsRecording) {
-    connection.thenApply(
+      List<FrameData> framesMetaData, long recordingStartMillis, int fpsRecording) {
+    connection.thenAccept(
         conn -> {
           synchronized (conn) {
-            ArrayList<FrameData> framesMetaData = parseTextObjects(resultsOcr);
             try {
               HostData hostData = new HostData(framesMetaData, recordingStartMillis, fpsRecording, hostSyncTimestamp.get());
-              ServerAction receiveResults = new ServerAction(2, "Sending results");
+              ServerAction receiveResults = new ServerAction(ACTION_CAPTURE_RESULTS, "Sending results");
               conn.outputWriter.write(new GsonBuilder().create().toJson(receiveResults));
               conn.outputWriter.flush();
 
@@ -126,22 +116,6 @@ public class ServerHandler {
               e.printStackTrace();
             }
           }
-          return null;
         });
-  }
-
-  private ArrayList<FrameData> parseTextObjects(ArrayList<Text> resultsOcr) {
-    ArrayList<FrameData> framesMetaData = new ArrayList<>();
-    for(Text frameText : resultsOcr){
-      FrameData frameData = new FrameData();
-      for(Text.TextBlock block : frameText.getTextBlocks()){
-        for(Text.Line line : block.getLines()){
-          frameData.cornerPoints.add(line.getCornerPoints());
-          frameData.line.add(line.getText());
-        }
-      }
-      framesMetaData.add(frameData);
-    }
-    return framesMetaData;
   }
 }

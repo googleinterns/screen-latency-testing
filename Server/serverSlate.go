@@ -14,7 +14,9 @@ import (
 
 const KEY = "m"
 const KEY_PRESS_COUNT = 10
-const CAMERA_STARTUP_DELAY = 450 // Manual calibration offset
+const CAMERA_STARTUP_DELAY = 410 // Manual calibration offset
+const ACTION_CAPTURE_STARTED = 1
+const ACTION_CAPTURE_RESULTS = 2
 
 type action struct {
 	Code    int    `json:"code"`
@@ -59,7 +61,8 @@ func main() {
 	fmt.Println("Got connection from:")
 	fmt.Println(conn.LocalAddr().String())
 
-	timestamps := make([]int64, KEY_PRESS_COUNT+1)
+	keyPressTimestamps := make([]int64, KEY_PRESS_COUNT+1)
+	var testStartTimestamp int64
 
 	hostCommunicator := json.NewDecoder(conn)
 
@@ -68,35 +71,34 @@ func main() {
 	for {
 		err := hostCommunicator.Decode(&hostAction)
 		fmt.Println(err)
-		if hostAction.Code == 1 {
-			simulateKeyPress(KEY, KEY_PRESS_COUNT, timestamps)
-		} else if hostAction.Code == 2 {
+		if hostAction.Code == ACTION_CAPTURE_STARTED {
+			testStartTimestamp, keyPressTimestamps = simulateKeyPress(KEY, KEY_PRESS_COUNT)
+		} else if hostAction.Code == ACTION_CAPTURE_RESULTS {
 			var ocrData hostData
 			hostCommunicator.Decode(&ocrData)
-			calculateLag(ocrData, timestamps)
+			calculateLag(ocrData, testStartTimestamp, keyPressTimestamps)
 		}
 	}
 }
 
-func calculateLag(ocrData hostData, timestamps []int64) []int64 {
+func calculateLag(ocrData hostData, testStartTimestamp int64, timestamps []int64) []int64 {
 	lagResults := make([]int64, KEY_PRESS_COUNT+1)
-	syncOffset := ocrData.HostSyncTimestamp - timestamps[0]
+	syncOffset := ocrData.HostSyncTimestamp - testStartTimestamp
 
 	searchKey := ""
-	frameDuration := 1000 / ocrData.VideoFps
-	for i := 1; i < len(timestamps); i++ {
+	for i := 0; i < len(timestamps); i++ {
 		searchKey += KEY
 		found := false
 		for j := 0; j < len(ocrData.FramesMetaData); j++ {
 			for k := 0; k < len(ocrData.FramesMetaData[j].Line); k++ {
 				if strings.HasPrefix(ocrData.FramesMetaData[j].Line[k], searchKey) {
-					lagResults[i-1] = timestamps[i] - (ocrData.RecordingStartTimeMillis + (int64(j) * frameDuration)) + syncOffset - CAMERA_STARTUP_DELAY
+					lagResults[i] = timestamps[i] - (ocrData.RecordingStartTimeMillis + ((int64(j) * 1000) / ocrData.VideoFps)) + syncOffset - CAMERA_STARTUP_DELAY
 					found = true
 					break
 				}
 			}
 			if found {
-				fmt.Println("Lag = ", lagResults[i-1], "ms")
+				fmt.Println("Lag = ", lagResults[i], "ms")
 				break
 			}
 		}
@@ -118,13 +120,15 @@ func runOsCommand(cmd *exec.Cmd) int {
 	return 1
 }
 
-func simulateKeyPress(key string, keyPressCount int, timestamps []int64) {
-	timestamps[0] = time.Now().UnixNano() / 1000000
+func simulateKeyPress(key string, keyPressCount int) (int64, []int64) {
+	timestamps := make([]int64, KEY_PRESS_COUNT)
+	testStartTimestamp := time.Now().UnixNano() / 1000000
 	time.Sleep(1 * time.Second)
-	for i := 1; i <= keyPressCount; i++ {
+	for i := 0; i < keyPressCount; i++ {
 		robotgo.TypeStr(key)
 		timestamps[i] = time.Now().UnixNano() / 1000000
 		time.Sleep(100 * time.Millisecond)
 	}
 	fmt.Println("Key simulation ended")
+	return testStartTimestamp, timestamps
 }
