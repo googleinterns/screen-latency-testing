@@ -54,7 +54,6 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
-import kotlin.concurrent.schedule
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
@@ -163,6 +162,8 @@ class CameraFragment : Fragment() {
             addTarget(recorderSurface)
             // Sets user requested FPS for all targets
             set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, Range(cameraSetting.fps, cameraSetting.fps))
+            set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_AUTO)
+            set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_ANTIBANDING_MODE_AUTO)
         }.let {
             // Creates a list of highly optimized capture requests sent to the camera for a high
             // speed video session. Important note: Must use repeating burst request type
