@@ -12,11 +12,13 @@ import (
 	"github.com/go-vgo/robotgo"
 )
 
-const KEY = "m"
-const KEY_PRESS_COUNT = 10
-const CAMERA_STARTUP_DELAY = 410 // Manual calibration offset
-const ACTION_CAPTURE_STARTED = 1
-const ACTION_CAPTURE_RESULTS = 2
+const (
+	KEY                    = "m"
+	KEY_PRESS_COUNT        = 10
+	CAMERA_STARTUP_DELAY   = 410 // Manual calibration offset
+	ACTION_CAPTURE_STARTED = 1
+	ACTION_CAPTURE_RESULTS = 2
+)
 
 type action struct {
 	Code    int    `json:"code"`
@@ -29,7 +31,7 @@ type point struct {
 }
 
 type frameData struct {
-	CornerPoints []point `json:"cornerPoints"`
+	CornerPoints [][]point `json:"cornerPoints"`
 	Line         []string
 }
 
@@ -40,7 +42,7 @@ type hostData struct {
 	HostSyncTimestamp        int64       `json:"hostSyncTimestamp"`
 }
 
-func main() {
+func Server() {
 	fmt.Println("Start server...")
 
 	ln, _ := net.Listen("tcp", "127.0.0.1:")
@@ -76,13 +78,13 @@ func main() {
 		} else if hostAction.Code == ACTION_CAPTURE_RESULTS {
 			var ocrData hostData
 			hostCommunicator.Decode(&ocrData)
-			calculateLag(ocrData, testStartTimestamp, keyPressTimestamps)
+			calculateLag(ocrData, testStartTimestamp, keyPressTimestamps, CAMERA_STARTUP_DELAY)
 		}
 	}
 }
 
-func calculateLag(ocrData hostData, testStartTimestamp int64, timestamps []int64) []int64 {
-	lagResults := make([]int64, KEY_PRESS_COUNT+1)
+func calculateLag(ocrData hostData, testStartTimestamp int64, timestamps []int64, camera_startup_delay int64) []int64 {
+	lagResults := make([]int64, KEY_PRESS_COUNT)
 	syncOffset := ocrData.HostSyncTimestamp - testStartTimestamp
 
 	searchKey := ""
@@ -92,7 +94,7 @@ func calculateLag(ocrData hostData, testStartTimestamp int64, timestamps []int64
 		for j := 0; j < len(ocrData.FramesMetaData); j++ {
 			for k := 0; k < len(ocrData.FramesMetaData[j].Line); k++ {
 				if strings.HasPrefix(ocrData.FramesMetaData[j].Line[k], searchKey) {
-					lagResults[i] = timestamps[i] - (ocrData.RecordingStartTimeMillis + ((int64(j) * 1000) / ocrData.VideoFps)) + syncOffset - CAMERA_STARTUP_DELAY
+					lagResults[i] = timestamps[i] - (ocrData.RecordingStartTimeMillis + ((int64(j) * 1000) / ocrData.VideoFps)) + syncOffset - camera_startup_delay
 					found = true
 					break
 				}
@@ -131,4 +133,8 @@ func simulateKeyPress(key string, keyPressCount int) (int64, []int64) {
 	}
 	fmt.Println("Key simulation ended")
 	return testStartTimestamp, timestamps
+}
+
+func main() {
+	Server()
 }
