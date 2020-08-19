@@ -25,12 +25,14 @@ import android.view.View
 import android.widget.FrameLayout
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
+import com.example.android.camera2.slowmo.fragments.CameraFragment
 
 class CameraActivity : AppCompatActivity() {
 
     private lateinit var container: FrameLayout
     lateinit var serverHandler: ServerHandler
 
+    @RequiresApi(Build.VERSION_CODES.N)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_camera)
@@ -56,22 +58,16 @@ class CameraActivity : AppCompatActivity() {
         }, IMMERSIVE_FLAG_TIMEOUT)
     }
 
-    //TODO: As this get's called after camera interface is finished capturing, the UI of app finishes.
-    // The results are calculated while the app UI closes. Add a UI until the processing completes.
     @RequiresApi(Build.VERSION_CODES.P)
     internal fun analyze(fileUri: Uri) {
         val videoProcessor = VideoProcessor()
-        val lagCalculator = LagCalculator()
 
-        if (!videoProcessor.createVideoReader(applicationContext, fileUri)) {
-            finish()
-        }
-
-        val serverTimestamps = serverHandler.downloadServerTimeStamps()
+        videoProcessor.createVideoReader(applicationContext, fileUri)
 
         val resultsOcr = videoProcessor.doOcr()
 
-        lagCalculator.calculateLag(serverTimestamps, videoProcessor.videoFramesTimestamp, resultsOcr, serverHandler.getSyncOffset())
+        serverHandler.sendOcrResults(
+                resultsOcr.get(), CameraFragment.recordingStartMillis, CameraFragment.fpsRecording)
     }
 
     companion object {

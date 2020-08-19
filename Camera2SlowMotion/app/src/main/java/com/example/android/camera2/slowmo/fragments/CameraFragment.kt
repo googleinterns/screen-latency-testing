@@ -54,7 +54,6 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
-import kotlin.concurrent.schedule
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
@@ -163,6 +162,8 @@ class CameraFragment : Fragment() {
             addTarget(recorderSurface)
             // Sets user requested FPS for all targets
             set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, Range(cameraSetting.fps, cameraSetting.fps))
+            set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_AUTO)
+            set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_ANTIBANDING_MODE_AUTO)
         }.let {
             // Creates a list of highly optimized capture requests sent to the camera for a high
             // speed video session. Important note: Must use repeating burst request type
@@ -330,10 +331,10 @@ class CameraFragment : Fragment() {
 
                     // Starts recording animation
                     overlay.post(animationTask)
+
+                    // Send signal to start key simulation in server text editor.
                     try {
-                        Timer().schedule(CAMERA_START_DELAY){
                             serverHandler.sendKeySimulationSignal()
-                        }
                     } catch (exc: Exception) {
                         Log.d(TAG, "Failed to send Start Capture signal")
                         Log.d(TAG, exc.message.toString())
@@ -373,8 +374,6 @@ class CameraFragment : Fragment() {
 
                     // starts lifecycle of lag calculation
                     (activity as CameraActivity).analyze(fileUri)
-
-                    //navController.popBackStack()
                 }
             }
 
@@ -477,7 +476,6 @@ class CameraFragment : Fragment() {
         private val TAG = CameraFragment::class.java.simpleName
         private const val RECORDER_VIDEO_BITRATE: Int = 10000000
         private const val MIN_REQUIRED_RECORDING_TIME_MILLIS: Long = 1000L
-        private const val CAMERA_START_DELAY = 550L
         lateinit var fileUri:Uri
         var fpsRecording:Int = 0
         var recordingStartMillis: Long = 0L
