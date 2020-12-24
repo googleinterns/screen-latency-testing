@@ -1,0 +1,10 @@
+[
+    {
+        "merged": "/home/rokus/StudioProjects/ocr-reader-complete/app/build/intermediates/res/merged/debug/drawable-hdpi_icon.png.flat",
+        "source": "/home/rokus/StudioProjects/ocr-reader-complete/app/src/main/res/drawable-hdpi/icon.png"
+    },
+    {
+        "merged": "/home/rokus/StudioProjects/ocr-reader-complete/app/build/intermediates/res/merged/debug/layout_ocr_capture.xml.flat",
+        "source": "/home/rokus/StudioProjects/ocr-reader-complete/app/src/main/res/layout/ocr_capture.xml"
+    }
+]

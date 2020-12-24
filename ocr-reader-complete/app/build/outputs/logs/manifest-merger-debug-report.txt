@@ -1,0 +1,187 @@
+-- Merging decision tree log ---
+manifest
+ADDED from /home/rokus/StudioProjects/ocr-reader-complete/app/src/main/AndroidManifest.xml:2:1-34:12
+INJECTED from /home/rokus/StudioProjects/ocr-reader-complete/app/src/main/AndroidManifest.xml:2:1-34:12
+INJECTED from /home/rokus/StudioProjects/ocr-reader-complete/app/src/main/AndroidManifest.xml:2:1-34:12
+INJECTED from /home/rokus/StudioProjects/ocr-reader-complete/app/src/main/AndroidManifest.xml:2:1-34:12
+MERGED from [com.google.android.gms:play-services-vision:15.0.0] /home/rokus/.gradle/caches/transforms-2/files-2.1/b25e4e38bac68524c2effeb74858135c/play-services-vision-15.0.0/AndroidManifest.xml:2:1-9:12
+MERGED from [com.android.support:design:27.1.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/00ef7feff03d4d1c1dbd16092dcf85dc/design-27.1.1/AndroidManifest.xml:17:1-22:12
+MERGED from [com.google.android.gms:play-services-vision-common:15.0.0] /home/rokus/.gradle/caches/transforms-2/files-2.1/a88d9e67003aa2316419122ac71468e0/play-services-vision-common-15.0.0/AndroidManifest.xml:2:1-9:12
+MERGED from [com.google.android.gms:play-services-clearcut:15.0.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/743a6966e33cd785f5debf59a2aff72a/play-services-clearcut-15.0.1/AndroidManifest.xml:17:1-24:12
+MERGED from [com.google.android.gms:play-services-flags:15.0.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/36fa901fbb1fed70c14adad8f0c0190a/play-services-flags-15.0.1/AndroidManifest.xml:17:1-22:12
+MERGED from [com.google.android.gms:play-services-phenotype:15.0.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/d849e983c169f7321b45ff0f185cbb8d/play-services-phenotype-15.0.1/AndroidManifest.xml:17:1-24:12
+MERGED from [com.google.android.gms:play-services-base:15.0.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/6f645dcbab74fa2b2625b435be0d8986/play-services-base-15.0.1/AndroidManifest.xml:17:1-29:12
+MERGED from [com.google.android.gms:play-services-tasks:15.0.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/b18f8df64b93d6a61dc8077248091653/play-services-tasks-15.0.1/AndroidManifest.xml:2:1-9:12
+MERGED from [com.google.android.gms:play-services-basement:15.0.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/b420a7f9094d0532056731e641f3ff79/play-services-basement-15.0.1/AndroidManifest.xml:17:1-28:12
+MERGED from [com.android.support:support-v4:27.1.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/213722f93bdc988bd32109642b64ecd1/support-v4-27.1.1/AndroidManifest.xml:17:1-22:12
+MERGED from [com.android.support:support-media-compat:27.1.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/861055886904d4b0b4bb37c0de00ecee/support-media-compat-27.1.1/AndroidManifest.xml:17:1-22:12
+MERGED from [com.android.support:appcompat-v7:27.1.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/9bab41cd1cac7e96d8cf039a3df31825/appcompat-v7-27.1.1/AndroidManifest.xml:17:1-22:12
+MERGED from [com.android.support:support-fragment:27.1.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/af44a2020543186d4e4449c2c57f9562/support-fragment-27.1.1/AndroidManifest.xml:17:1-22:12
+MERGED from [com.android.support:recyclerview-v7:27.1.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/3cdae65221c0210989689379ace1ccc4/recyclerview-v7-27.1.1/AndroidManifest.xml:17:1-22:12
+MERGED from [com.android.support:animated-vector-drawable:27.1.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/1f2892c38e9840c58ab405413fb28632/animated-vector-drawable-27.1.1/AndroidManifest.xml:17:1-22:12
+MERGED from [com.android.support:support-core-ui:27.1.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/737391e76ecd5748c55f71a982c2dc3e/support-core-ui-27.1.1/AndroidManifest.xml:17:1-22:12
+MERGED from [com.android.support:support-core-utils:27.1.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/ec9a9e48e73878aaa31602796e8d1fcf/support-core-utils-27.1.1/AndroidManifest.xml:17:1-22:12
+MERGED from [com.android.support:transition:27.1.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/99e4b47d9356629d6e04a67eb56abff6/transition-27.1.1/AndroidManifest.xml:17:1-22:12
+MERGED from [com.android.support:support-vector-drawable:27.1.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/d71c4a7453c2c65e83a32ca7f1ac2b2d/support-vector-drawable-27.1.1/AndroidManifest.xml:17:1-22:12
+MERGED from [com.android.support:support-compat:27.1.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/ea0ee35f22a88ff9d8bac691cda371e2/support-compat-27.1.1/AndroidManifest.xml:17:1-22:12
+MERGED from [android.arch.lifecycle:runtime:1.1.0] /home/rokus/.gradle/caches/transforms-2/files-2.1/c06d85bc43379e950603fd5693ef4696/runtime-1.1.0/AndroidManifest.xml:17:1-22:12
+MERGED from [android.arch.lifecycle:livedata-core:1.1.0] /home/rokus/.gradle/caches/transforms-2/files-2.1/92a577ba1cbf7d21b00d35b3ea7a240d/livedata-core-1.1.0/AndroidManifest.xml:17:1-22:12
+MERGED from [android.arch.lifecycle:viewmodel:1.1.0] /home/rokus/.gradle/caches/transforms-2/files-2.1/ef6843ea5770e504c24b448e1bb8a0a9/viewmodel-1.1.0/AndroidManifest.xml:17:1-22:12
+MERGED from [android.arch.core:runtime:1.1.0] /home/rokus/.gradle/caches/transforms-2/files-2.1/0a2bdce0da8cfd5c768a5af1598d6c65/runtime-1.1.0/AndroidManifest.xml:17:1-22:12
+INJECTED from /home/rokus/StudioProjects/ocr-reader-complete/app/src/main/AndroidManifest.xml:2:1-34:12
+INJECTED from /home/rokus/StudioProjects/ocr-reader-complete/app/src/main/AndroidManifest.xml:2:1-34:12
+INJECTED from /home/rokus/StudioProjects/ocr-reader-complete/app/src/main/AndroidManifest.xml:2:1-34:12
+	package
+		ADDED from /home/rokus/StudioProjects/ocr-reader-complete/app/src/main/AndroidManifest.xml:3:5-62
+		INJECTED from /home/rokus/StudioProjects/ocr-reader-complete/app/src/main/AndroidManifest.xml
+		INJECTED from /home/rokus/StudioProjects/ocr-reader-complete/app/src/main/AndroidManifest.xml
+	android:versionName
+		INJECTED from /home/rokus/StudioProjects/ocr-reader-complete/app/src/main/AndroidManifest.xml
+		ADDED from /home/rokus/StudioProjects/ocr-reader-complete/app/src/main/AndroidManifest.xml:2:1-34:12
+		INJECTED from /home/rokus/StudioProjects/ocr-reader-complete/app/src/main/AndroidManifest.xml
+	android:versionCode
+		INJECTED from /home/rokus/StudioProjects/ocr-reader-complete/app/src/main/AndroidManifest.xml
+		ADDED from /home/rokus/StudioProjects/ocr-reader-complete/app/src/main/AndroidManifest.xml:2:1-34:12
+		INJECTED from /home/rokus/StudioProjects/ocr-reader-complete/app/src/main/AndroidManifest.xml
+	xmlns:android
+		ADDED from /home/rokus/StudioProjects/ocr-reader-complete/app/src/main/AndroidManifest.xml:2:11-69
+	android:installLocation
+		ADDED from /home/rokus/StudioProjects/ocr-reader-complete/app/src/main/AndroidManifest.xml:4:5-35
+uses-feature#android.hardware.camera
+ADDED from /home/rokus/StudioProjects/ocr-reader-complete/app/src/main/AndroidManifest.xml:6:5-60
+	android:name
+		ADDED from /home/rokus/StudioProjects/ocr-reader-complete/app/src/main/AndroidManifest.xml:6:19-57
+uses-permission#android.permission.CAMERA
+ADDED from /home/rokus/StudioProjects/ocr-reader-complete/app/src/main/AndroidManifest.xml:8:5-65
+	android:name
+		ADDED from /home/rokus/StudioProjects/ocr-reader-complete/app/src/main/AndroidManifest.xml:8:22-62
+application
+ADDED from /home/rokus/StudioProjects/ocr-reader-complete/app/src/main/AndroidManifest.xml:10:5-32:19
+MERGED from [com.google.android.gms:play-services-vision:15.0.0] /home/rokus/.gradle/caches/transforms-2/files-2.1/b25e4e38bac68524c2effeb74858135c/play-services-vision-15.0.0/AndroidManifest.xml:7:5-20
+MERGED from [com.google.android.gms:play-services-vision:15.0.0] /home/rokus/.gradle/caches/transforms-2/files-2.1/b25e4e38bac68524c2effeb74858135c/play-services-vision-15.0.0/AndroidManifest.xml:7:5-20
+MERGED from [com.google.android.gms:play-services-vision-common:15.0.0] /home/rokus/.gradle/caches/transforms-2/files-2.1/a88d9e67003aa2316419122ac71468e0/play-services-vision-common-15.0.0/AndroidManifest.xml:7:5-20
+MERGED from [com.google.android.gms:play-services-vision-common:15.0.0] /home/rokus/.gradle/caches/transforms-2/files-2.1/a88d9e67003aa2316419122ac71468e0/play-services-vision-common-15.0.0/AndroidManifest.xml:7:5-20
+MERGED from [com.google.android.gms:play-services-clearcut:15.0.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/743a6966e33cd785f5debf59a2aff72a/play-services-clearcut-15.0.1/AndroidManifest.xml:22:5-20
+MERGED from [com.google.android.gms:play-services-clearcut:15.0.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/743a6966e33cd785f5debf59a2aff72a/play-services-clearcut-15.0.1/AndroidManifest.xml:22:5-20
+MERGED from [com.google.android.gms:play-services-phenotype:15.0.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/d849e983c169f7321b45ff0f185cbb8d/play-services-phenotype-15.0.1/AndroidManifest.xml:22:5-20
+MERGED from [com.google.android.gms:play-services-phenotype:15.0.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/d849e983c169f7321b45ff0f185cbb8d/play-services-phenotype-15.0.1/AndroidManifest.xml:22:5-20
+MERGED from [com.google.android.gms:play-services-base:15.0.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/6f645dcbab74fa2b2625b435be0d8986/play-services-base-15.0.1/AndroidManifest.xml:22:5-27:19
+MERGED from [com.google.android.gms:play-services-base:15.0.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/6f645dcbab74fa2b2625b435be0d8986/play-services-base-15.0.1/AndroidManifest.xml:22:5-27:19
+MERGED from [com.google.android.gms:play-services-tasks:15.0.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/b18f8df64b93d6a61dc8077248091653/play-services-tasks-15.0.1/AndroidManifest.xml:7:5-20
+MERGED from [com.google.android.gms:play-services-tasks:15.0.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/b18f8df64b93d6a61dc8077248091653/play-services-tasks-15.0.1/AndroidManifest.xml:7:5-20
+MERGED from [com.google.android.gms:play-services-basement:15.0.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/b420a7f9094d0532056731e641f3ff79/play-services-basement-15.0.1/AndroidManifest.xml:22:5-26:19
+MERGED from [com.google.android.gms:play-services-basement:15.0.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/b420a7f9094d0532056731e641f3ff79/play-services-basement-15.0.1/AndroidManifest.xml:22:5-26:19
+	android:supportsRtl
+		ADDED from /home/rokus/StudioProjects/ocr-reader-complete/app/src/main/AndroidManifest.xml:16:9-37
+	android:label
+		ADDED from /home/rokus/StudioProjects/ocr-reader-complete/app/src/main/AndroidManifest.xml:15:9-37
+	android:hardwareAccelerated
+		ADDED from /home/rokus/StudioProjects/ocr-reader-complete/app/src/main/AndroidManifest.xml:13:9-43
+	android:fullBackupContent
+		ADDED from /home/rokus/StudioProjects/ocr-reader-complete/app/src/main/AndroidManifest.xml:12:9-42
+	android:icon
+		ADDED from /home/rokus/StudioProjects/ocr-reader-complete/app/src/main/AndroidManifest.xml:14:9-38
+	android:allowBackup
+		ADDED from /home/rokus/StudioProjects/ocr-reader-complete/app/src/main/AndroidManifest.xml:11:9-35
+	android:theme
+		ADDED from /home/rokus/StudioProjects/ocr-reader-complete/app/src/main/AndroidManifest.xml:17:9-47
+meta-data#com.google.android.gms.version
+ADDED from /home/rokus/StudioProjects/ocr-reader-complete/app/src/main/AndroidManifest.xml:18:9-20:69
+MERGED from [com.google.android.gms:play-services-basement:15.0.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/b420a7f9094d0532056731e641f3ff79/play-services-basement-15.0.1/AndroidManifest.xml:23:9-25:69
+MERGED from [com.google.android.gms:play-services-basement:15.0.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/b420a7f9094d0532056731e641f3ff79/play-services-basement-15.0.1/AndroidManifest.xml:23:9-25:69
+	android:value
+		ADDED from /home/rokus/StudioProjects/ocr-reader-complete/app/src/main/AndroidManifest.xml:20:13-66
+	android:name
+		ADDED from /home/rokus/StudioProjects/ocr-reader-complete/app/src/main/AndroidManifest.xml:19:13-58
+meta-data#com.google.android.gms.vision.DEPENDENCIES
+ADDED from /home/rokus/StudioProjects/ocr-reader-complete/app/src/main/AndroidManifest.xml:21:9-23:35
+	android:value
+		ADDED from /home/rokus/StudioProjects/ocr-reader-complete/app/src/main/AndroidManifest.xml:23:13-32
+	android:name
+		ADDED from /home/rokus/StudioProjects/ocr-reader-complete/app/src/main/AndroidManifest.xml:22:13-70
+activity#com.google.android.gms.samples.vision.ocrreader.OcrCaptureActivity
+ADDED from /home/rokus/StudioProjects/ocr-reader-complete/app/src/main/AndroidManifest.xml:25:9-31:20
+	android:label
+		ADDED from /home/rokus/StudioProjects/ocr-reader-complete/app/src/main/AndroidManifest.xml:26:13-38
+	android:name
+		ADDED from /home/rokus/StudioProjects/ocr-reader-complete/app/src/main/AndroidManifest.xml:25:19-100
+intent-filter#action:name:android.intent.action.MAIN+category:name:android.intent.category.LAUNCHER
+ADDED from /home/rokus/StudioProjects/ocr-reader-complete/app/src/main/AndroidManifest.xml:27:13-30:29
+action#android.intent.action.MAIN
+ADDED from /home/rokus/StudioProjects/ocr-reader-complete/app/src/main/AndroidManifest.xml:28:17-69
+	android:name
+		ADDED from /home/rokus/StudioProjects/ocr-reader-complete/app/src/main/AndroidManifest.xml:28:25-66
+category#android.intent.category.LAUNCHER
+ADDED from /home/rokus/StudioProjects/ocr-reader-complete/app/src/main/AndroidManifest.xml:29:17-77
+	android:name
+		ADDED from /home/rokus/StudioProjects/ocr-reader-complete/app/src/main/AndroidManifest.xml:29:27-74
+uses-sdk
+INJECTED from /home/rokus/StudioProjects/ocr-reader-complete/app/src/main/AndroidManifest.xml reason: use-sdk injection requested
+INJECTED from /home/rokus/StudioProjects/ocr-reader-complete/app/src/main/AndroidManifest.xml
+INJECTED from /home/rokus/StudioProjects/ocr-reader-complete/app/src/main/AndroidManifest.xml
+MERGED from [com.google.android.gms:play-services-vision:15.0.0] /home/rokus/.gradle/caches/transforms-2/files-2.1/b25e4e38bac68524c2effeb74858135c/play-services-vision-15.0.0/AndroidManifest.xml:5:5-44
+MERGED from [com.google.android.gms:play-services-vision:15.0.0] /home/rokus/.gradle/caches/transforms-2/files-2.1/b25e4e38bac68524c2effeb74858135c/play-services-vision-15.0.0/AndroidManifest.xml:5:5-44
+MERGED from [com.android.support:design:27.1.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/00ef7feff03d4d1c1dbd16092dcf85dc/design-27.1.1/AndroidManifest.xml:20:5-44
+MERGED from [com.android.support:design:27.1.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/00ef7feff03d4d1c1dbd16092dcf85dc/design-27.1.1/AndroidManifest.xml:20:5-44
+MERGED from [com.google.android.gms:play-services-vision-common:15.0.0] /home/rokus/.gradle/caches/transforms-2/files-2.1/a88d9e67003aa2316419122ac71468e0/play-services-vision-common-15.0.0/AndroidManifest.xml:5:5-44
+MERGED from [com.google.android.gms:play-services-vision-common:15.0.0] /home/rokus/.gradle/caches/transforms-2/files-2.1/a88d9e67003aa2316419122ac71468e0/play-services-vision-common-15.0.0/AndroidManifest.xml:5:5-44
+MERGED from [com.google.android.gms:play-services-clearcut:15.0.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/743a6966e33cd785f5debf59a2aff72a/play-services-clearcut-15.0.1/AndroidManifest.xml:20:5-44
+MERGED from [com.google.android.gms:play-services-clearcut:15.0.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/743a6966e33cd785f5debf59a2aff72a/play-services-clearcut-15.0.1/AndroidManifest.xml:20:5-44
+MERGED from [com.google.android.gms:play-services-flags:15.0.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/36fa901fbb1fed70c14adad8f0c0190a/play-services-flags-15.0.1/AndroidManifest.xml:20:5-44
+MERGED from [com.google.android.gms:play-services-flags:15.0.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/36fa901fbb1fed70c14adad8f0c0190a/play-services-flags-15.0.1/AndroidManifest.xml:20:5-44
+MERGED from [com.google.android.gms:play-services-phenotype:15.0.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/d849e983c169f7321b45ff0f185cbb8d/play-services-phenotype-15.0.1/AndroidManifest.xml:20:5-44
+MERGED from [com.google.android.gms:play-services-phenotype:15.0.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/d849e983c169f7321b45ff0f185cbb8d/play-services-phenotype-15.0.1/AndroidManifest.xml:20:5-44
+MERGED from [com.google.android.gms:play-services-base:15.0.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/6f645dcbab74fa2b2625b435be0d8986/play-services-base-15.0.1/AndroidManifest.xml:20:5-44
+MERGED from [com.google.android.gms:play-services-base:15.0.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/6f645dcbab74fa2b2625b435be0d8986/play-services-base-15.0.1/AndroidManifest.xml:20:5-44
+MERGED from [com.google.android.gms:play-services-tasks:15.0.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/b18f8df64b93d6a61dc8077248091653/play-services-tasks-15.0.1/AndroidManifest.xml:5:5-44
+MERGED from [com.google.android.gms:play-services-tasks:15.0.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/b18f8df64b93d6a61dc8077248091653/play-services-tasks-15.0.1/AndroidManifest.xml:5:5-44
+MERGED from [com.google.android.gms:play-services-basement:15.0.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/b420a7f9094d0532056731e641f3ff79/play-services-basement-15.0.1/AndroidManifest.xml:20:5-44
+MERGED from [com.google.android.gms:play-services-basement:15.0.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/b420a7f9094d0532056731e641f3ff79/play-services-basement-15.0.1/AndroidManifest.xml:20:5-44
+MERGED from [com.android.support:support-v4:27.1.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/213722f93bdc988bd32109642b64ecd1/support-v4-27.1.1/AndroidManifest.xml:20:5-44
+MERGED from [com.android.support:support-v4:27.1.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/213722f93bdc988bd32109642b64ecd1/support-v4-27.1.1/AndroidManifest.xml:20:5-44
+MERGED from [com.android.support:support-media-compat:27.1.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/861055886904d4b0b4bb37c0de00ecee/support-media-compat-27.1.1/AndroidManifest.xml:20:5-44
+MERGED from [com.android.support:support-media-compat:27.1.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/861055886904d4b0b4bb37c0de00ecee/support-media-compat-27.1.1/AndroidManifest.xml:20:5-44
+MERGED from [com.android.support:appcompat-v7:27.1.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/9bab41cd1cac7e96d8cf039a3df31825/appcompat-v7-27.1.1/AndroidManifest.xml:20:5-44
+MERGED from [com.android.support:appcompat-v7:27.1.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/9bab41cd1cac7e96d8cf039a3df31825/appcompat-v7-27.1.1/AndroidManifest.xml:20:5-44
+MERGED from [com.android.support:support-fragment:27.1.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/af44a2020543186d4e4449c2c57f9562/support-fragment-27.1.1/AndroidManifest.xml:20:5-44
+MERGED from [com.android.support:support-fragment:27.1.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/af44a2020543186d4e4449c2c57f9562/support-fragment-27.1.1/AndroidManifest.xml:20:5-44
+MERGED from [com.android.support:recyclerview-v7:27.1.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/3cdae65221c0210989689379ace1ccc4/recyclerview-v7-27.1.1/AndroidManifest.xml:20:5-44
+MERGED from [com.android.support:recyclerview-v7:27.1.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/3cdae65221c0210989689379ace1ccc4/recyclerview-v7-27.1.1/AndroidManifest.xml:20:5-44
+MERGED from [com.android.support:animated-vector-drawable:27.1.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/1f2892c38e9840c58ab405413fb28632/animated-vector-drawable-27.1.1/AndroidManifest.xml:20:5-44
+MERGED from [com.android.support:animated-vector-drawable:27.1.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/1f2892c38e9840c58ab405413fb28632/animated-vector-drawable-27.1.1/AndroidManifest.xml:20:5-44
+MERGED from [com.android.support:support-core-ui:27.1.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/737391e76ecd5748c55f71a982c2dc3e/support-core-ui-27.1.1/AndroidManifest.xml:20:5-44
+MERGED from [com.android.support:support-core-ui:27.1.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/737391e76ecd5748c55f71a982c2dc3e/support-core-ui-27.1.1/AndroidManifest.xml:20:5-44
+MERGED from [com.android.support:support-core-utils:27.1.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/ec9a9e48e73878aaa31602796e8d1fcf/support-core-utils-27.1.1/AndroidManifest.xml:20:5-44
+MERGED from [com.android.support:support-core-utils:27.1.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/ec9a9e48e73878aaa31602796e8d1fcf/support-core-utils-27.1.1/AndroidManifest.xml:20:5-44
+MERGED from [com.android.support:transition:27.1.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/99e4b47d9356629d6e04a67eb56abff6/transition-27.1.1/AndroidManifest.xml:20:5-44
+MERGED from [com.android.support:transition:27.1.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/99e4b47d9356629d6e04a67eb56abff6/transition-27.1.1/AndroidManifest.xml:20:5-44
+MERGED from [com.android.support:support-vector-drawable:27.1.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/d71c4a7453c2c65e83a32ca7f1ac2b2d/support-vector-drawable-27.1.1/AndroidManifest.xml:20:5-44
+MERGED from [com.android.support:support-vector-drawable:27.1.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/d71c4a7453c2c65e83a32ca7f1ac2b2d/support-vector-drawable-27.1.1/AndroidManifest.xml:20:5-44
+MERGED from [com.android.support:support-compat:27.1.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/ea0ee35f22a88ff9d8bac691cda371e2/support-compat-27.1.1/AndroidManifest.xml:20:5-44
+MERGED from [com.android.support:support-compat:27.1.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/ea0ee35f22a88ff9d8bac691cda371e2/support-compat-27.1.1/AndroidManifest.xml:20:5-44
+MERGED from [android.arch.lifecycle:runtime:1.1.0] /home/rokus/.gradle/caches/transforms-2/files-2.1/c06d85bc43379e950603fd5693ef4696/runtime-1.1.0/AndroidManifest.xml:20:5-44
+MERGED from [android.arch.lifecycle:runtime:1.1.0] /home/rokus/.gradle/caches/transforms-2/files-2.1/c06d85bc43379e950603fd5693ef4696/runtime-1.1.0/AndroidManifest.xml:20:5-44
+MERGED from [android.arch.lifecycle:livedata-core:1.1.0] /home/rokus/.gradle/caches/transforms-2/files-2.1/92a577ba1cbf7d21b00d35b3ea7a240d/livedata-core-1.1.0/AndroidManifest.xml:20:5-44
+MERGED from [android.arch.lifecycle:livedata-core:1.1.0] /home/rokus/.gradle/caches/transforms-2/files-2.1/92a577ba1cbf7d21b00d35b3ea7a240d/livedata-core-1.1.0/AndroidManifest.xml:20:5-44
+MERGED from [android.arch.lifecycle:viewmodel:1.1.0] /home/rokus/.gradle/caches/transforms-2/files-2.1/ef6843ea5770e504c24b448e1bb8a0a9/viewmodel-1.1.0/AndroidManifest.xml:20:5-44
+MERGED from [android.arch.lifecycle:viewmodel:1.1.0] /home/rokus/.gradle/caches/transforms-2/files-2.1/ef6843ea5770e504c24b448e1bb8a0a9/viewmodel-1.1.0/AndroidManifest.xml:20:5-44
+MERGED from [android.arch.core:runtime:1.1.0] /home/rokus/.gradle/caches/transforms-2/files-2.1/0a2bdce0da8cfd5c768a5af1598d6c65/runtime-1.1.0/AndroidManifest.xml:20:5-44
+MERGED from [android.arch.core:runtime:1.1.0] /home/rokus/.gradle/caches/transforms-2/files-2.1/0a2bdce0da8cfd5c768a5af1598d6c65/runtime-1.1.0/AndroidManifest.xml:20:5-44
+INJECTED from /home/rokus/StudioProjects/ocr-reader-complete/app/src/main/AndroidManifest.xml
+INJECTED from /home/rokus/StudioProjects/ocr-reader-complete/app/src/main/AndroidManifest.xml
+	android:targetSdkVersion
+		INJECTED from /home/rokus/StudioProjects/ocr-reader-complete/app/src/main/AndroidManifest.xml
+		ADDED from /home/rokus/StudioProjects/ocr-reader-complete/app/src/main/AndroidManifest.xml
+		INJECTED from /home/rokus/StudioProjects/ocr-reader-complete/app/src/main/AndroidManifest.xml
+	android:minSdkVersion
+		INJECTED from /home/rokus/StudioProjects/ocr-reader-complete/app/src/main/AndroidManifest.xml
+		ADDED from /home/rokus/StudioProjects/ocr-reader-complete/app/src/main/AndroidManifest.xml
+		INJECTED from /home/rokus/StudioProjects/ocr-reader-complete/app/src/main/AndroidManifest.xml
+activity#com.google.android.gms.common.api.GoogleApiActivity
+ADDED from [com.google.android.gms:play-services-base:15.0.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/6f645dcbab74fa2b2625b435be0d8986/play-services-base-15.0.1/AndroidManifest.xml:23:9-26:75
+	android:exported
+		ADDED from [com.google.android.gms:play-services-base:15.0.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/6f645dcbab74fa2b2625b435be0d8986/play-services-base-15.0.1/AndroidManifest.xml:25:13-37
+	android:theme
+		ADDED from [com.google.android.gms:play-services-base:15.0.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/6f645dcbab74fa2b2625b435be0d8986/play-services-base-15.0.1/AndroidManifest.xml:26:13-72
+	android:name
+		ADDED from [com.google.android.gms:play-services-base:15.0.1] /home/rokus/.gradle/caches/transforms-2/files-2.1/6f645dcbab74fa2b2625b435be0d8986/play-services-base-15.0.1/AndroidManifest.xml:24:13-79
